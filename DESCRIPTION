@@ -1,0 +1,15 @@
+Package: dtrans
+Title: Transforming high-dimensional data to the lower-dimensional data
+Version: 0.0.0.9000
+Authors@R: 
+    person("Tram", "Chau", , "thimachau@my.vuw.ac.nz", role = c("aut", "cre"),
+           comment = c(ORCID = "0009-0007-6479-550X"))
+Description: This package provides functions to create the transformer which tranforms a high-dimensional data into a lower-dimensional data for data visualization and feature reduction.
+License: `use_gpl3_license()`
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
