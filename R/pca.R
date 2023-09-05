@@ -1,9 +1,9 @@
-#' Function creating a transformer object by PCA algorithm
+#' Function creating a transformer object by PCA algorithm.
 #'
-#' This function return a transformer object for data
-#' @param components positive number of components for the transformed data
-#' @param scale boolean value to scale transformed data to the original data range
-#' @param discrete boolean value to handle discrete features in data
+#' This function return a transformer object for data.
+#' @param components positive number of components for the transformed data.
+#' @param scale boolean value to scale transformed data to the original data range.
+#' @param discrete boolean value to handle discrete features in data.
 #'
 #' @export
 #' @examples
@@ -13,8 +13,7 @@
 transformer.pca <- function (x, ...) UseMethod("transformer.pca")
 
 transformer.pca.default <-
-  function(x, retx = TRUE, center = TRUE, scale. = FALSE, tol = NULL,
-           rank. = NULL, ...)
+  function(x, component = 2, center = TRUE, scale. = FALSE, tol = NULL, ...)
   {
     chkDots(...)
     x <- as.matrix(x)
@@ -25,7 +24,7 @@ transformer.pca.default <-
       stop("cannot rescale a constant/zero column to unit variance")
     n <- nrow(x)
     p <- ncol(x)
-    k <- assign_k(rank., n, p)
+    k <- .assign_k(components, n, p)
     s <- svd(x, nu = 0, nv = k)
     j <- seq_len(k)
     s$d <- s$d / sqrt(max(1, n - 1))
@@ -42,7 +41,8 @@ transformer.pca.default <-
               center = cen, # %||% FALSE,
               scale  = sc, #  %||% FALSE)
               technique = "pca")
-    if (retx) r$x <- x %*% s$v
+    r$x <- x %*% s$v
+
     class(r) <- "transformer"
     r
   }
