@@ -7,14 +7,28 @@
 transformer.kpca(x, ...)
 }
 \arguments{
-\item{components}{positive number of components for the transformed data.}
+\item{component}{positive number of components for the transformed data.}
 
-\item{scale}{boolean value to scale transformed data to the original data range.}
+\item{center}{boolean value to scale data. Parameter is passed to base::scale.}
 
-\item{discrete}{boolean value to handle discrete features in data.}
+\item{scaling}{boolean value to scale data. Parameter is passed to base::scale.}
+
+\item{handle_discrete}{boolean value to handle discrete features in data.}
+
+\item{kernel}{string to indicate the kernel name, the allowed values are [].}
+
+\item{sigma}{sigma...}
+
+\item{th}{value to define warning threshold for eigenvalues.}
+}
+\value{
+transformer.pca return a class "transformer" containing the following componenets:
 }
 \description{
-This function return a transformer object for data.
+This function return a transformer object fitted by data.
+}
+\details{
+This calculation is created based on stat::prcomp function with some adjustments to fit into the purpose of the package. It creates a transformer object including several attribute to perform other functionality.
 }
 \examples{
 data(iris)

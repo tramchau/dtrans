@@ -1,0 +1,47 @@
+---
+title: "my-vignette"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{my-vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(dtrans)
+```
+
+This package is about transformer object which is created by different algorithms including PCA, NMF, and Kernel PCA. It transforms the high 
+dimensionality dataset into a lower one to serve the visualization purpose or dimension reduction tasks.
+
+Firstly, the object will be simply created with the given dataset:
+
+```{r}
+data("iris")
+#pca <- transformer.pca(iris[,1:4])
+#nmf <- transformer.nmf(iris[,1:4])
+#kpca <- transformer.kpca(iris[,1:4])
+
+```
+
+The created objects are class 'Transformer' with attributes:
+
+```{r}
+#attributes(pca)
+```
+
+* x: transformed data
+* sdev: 
+* coef: coefficient of original features to each fitted component
+* center: value used as center to scale data, default is mean of each original feature
+* scale: value used to scale the data before transforming, default is std of original feature
+* technique: indicate the algorithm used to create the object
+* data: original data
+

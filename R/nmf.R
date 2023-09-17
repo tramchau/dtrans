@@ -1,10 +1,16 @@
 #' Function creating a transformer object by NMF algorithm (Lee et al. 2001 based on Euclidean distance)
 #'
-#' This function return a transformer object for data.
-#' @param components positive number of components for the transformed data, default is 2.
-#' @param discrete boolean value to handle discrete features in data.
+#' This function return a transformer object fitted by data.
+#' @param component positive number of components for the transformed data, default is 2.
+#' @param center boolean value to scale data. Parameter is passed to base::scale.
+#' @param scaling boolean value to scale data. Parameter is passed to base::scale.
+#' @param handle_discrete boolean value to handle discrete features in data.
 #' @param max_iter positive number to limit the iteration, default is 1000.
-#' @param eps positive small float number to define the residual.
+#'
+#' @details
+#' This calculation is created based on NMFN::nmf function with some adjustments to fit into the purpose of the package. It creates a transformer object including several attributes to perform other functionalities.
+#'
+#' @return transformer.nmf return a class "transformer" containing the following components:
 #'
 #' @export
 #' @examples
@@ -13,34 +19,18 @@
 #'
 transformer.nmf <- function (x, ...) UseMethod("transformer.nmf")
 
-transformer.nmf.default <- function (x, components=2, method = "nnmf_mm", max_iter = 1000, eps = 2.2204e-16)
+transformer.nmf.default <-
+  function (x, components=2, center = TRUE, scaling = FALSE, handle_discrete = NULL, max_iter = 1000)
 {
-  if (method == "nnmf_als") { # Kim et al. 2007
-    cat("Alternating Least Squares Algorithm", "\n")
-    nnmf_als(x, components, max_iter, eps)
-  }
-  else if (method == "nnmf_prob") {
-    cat("Multinomial Algorithm", "\n")
-    nnmf_prob(x, components, max_iter, eps)
-  }
-  else { # Lee et al. 2001 based on Euclidean distance
-    cat("Multiplicative Update Algorithm (Default)", "\n")
-    .nnmf_mm(x, components, max_iter, eps)
-  }
-}
-
-.nnmf_mm <- function (x, components=NULL, max_iter, eps)
-{
+  # method = "nnmf_mm"
+  eps <- 2.2204e-16
   print_iter <- 50
   x <- as.matrix(x)
-  if (any(!is.finite(x)))
-    stop("infinite or missing values in 'x'")
+  if (any(!is.finite(x))) stop("infinite or missing values in 'x'")
   dx <- dim(x)
   n <- dx[1L]
   m <- dx[2L]
-  if (!n || !m)
-    stop("0 extent dimensions")
-  components <- .assign_k(components, n, m)
+  if (!n || !m) stop("0 extent dimensions")
   W <- matrix(abs(rnorm(n * components)), n, components)
   H <- matrix(abs(rnorm(components * m)), components, m)
   Xr_old = W %*% H
@@ -72,8 +62,8 @@ transformer.nmf.default <- function (x, components=2, method = "nnmf_mm", max_it
   z <- c(list(x = W, coef = HT, sdev = NULL,
               scale = NULL, center = NULL,
               technique = "nmf",
-              prediction=list(method = method, iter = max_iter, eps = eps))
-              )
+              prediction=list(iter = max_iter))
+  )
   class(z) <- "transformer"
   z
 }
@@ -82,13 +72,4 @@ transformer.nmf.default <- function (x, components=2, method = "nnmf_mm", max_it
 {
   temp <- x1 - x2
   sum(temp * temp)
-}
-
-.assign_k <- function(components, n, m)
-{
-  if(!is.null(components)) {
-    stopifnot(length(components) == 1, is.finite(components), as.integer(components) > 0)
-    return (min(as.integer(components), n, m))
-  } else
-    return (min(n, m))
 }

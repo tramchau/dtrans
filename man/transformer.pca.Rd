@@ -2,19 +2,34 @@
 % Please edit documentation in R/pca.R
 \name{transformer.pca}
 \alias{transformer.pca}
-\title{Function creating a transformer object by PCA algorithm.}
+\title{Function creating a transformer object from a dataset using PCA algorithm.}
 \usage{
-transformer.pca(x, ...)
+transformer.pca(
+  x,
+  component = 2,
+  center = TRUE,
+  scaling = FALSE,
+  handle_discrete = NULL,
+  ...
+)
 }
 \arguments{
-\item{components}{positive number of components for the transformed data.}
+\item{component}{positive number of components for the transformed data.}
 
-\item{scale}{boolean value to scale transformed data to the original data range.}
+\item{center}{boolean value to scale data. Parameter is passed to base::scale.}
 
-\item{discrete}{boolean value to handle discrete features in data.}
+\item{scaling}{boolean value to scale data. Parameter is passed to base::scale.}
+
+\item{handle_discrete}{boolean value to handle discrete features in data.}
+}
+\value{
+transformer.pca return a class "transformer" containing the following componenets:
 }
 \description{
-This function return a transformer object for data.
+This function return a transformer object fitted by data.
+}
+\details{
+This calculation is created based on stat::prcomp function with some adjustments to fit into the purpose of the package. It creates a transformer object including several attribute to perform other functionality.
 }
 \examples{
 data(iris)

@@ -7,16 +7,24 @@
 transformer.nmf(x, ...)
 }
 \arguments{
-\item{components}{positive number of components for the transformed data, default is 2.}
+\item{component}{positive number of components for the transformed data, default is 2.}
 
-\item{discrete}{boolean value to handle discrete features in data.}
+\item{center}{boolean value to scale data. Parameter is passed to base::scale.}
+
+\item{scaling}{boolean value to scale data. Parameter is passed to base::scale.}
+
+\item{handle_discrete}{boolean value to handle discrete features in data.}
 
 \item{max_iter}{positive number to limit the iteration, default is 1000.}
-
-\item{eps}{positive small float number to define the residual.}
+}
+\value{
+transformer.nmf return a class "transformer" containing the following components:
 }
 \description{
-This function return a transformer object for data.
+This function return a transformer object fitted by data.
+}
+\details{
+This calculation is created based on NMFN::nmf function with some adjustments to fit into the purpose of the package. It creates a transformer object including several attributes to perform other functionalities.
 }
 \examples{
 data(iris)

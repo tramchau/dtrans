@@ -1,9 +1,18 @@
 #' Function creating a transformer object by PCA algorithm.
 #'
-#' This function return a transformer object for data.
-#' @param components positive number of components for the transformed data.
-#' @param scale boolean value to scale transformed data to the original data range.
-#' @param discrete boolean value to handle discrete features in data.
+#' This function return a transformer object fitted by data.
+#' @param component positive number of components for the transformed data.
+#' @param center boolean value to scale data. Parameter is passed to base::scale.
+#' @param scaling boolean value to scale data. Parameter is passed to base::scale.
+#' @param handle_discrete boolean value to handle discrete features in data.
+#' @param kernel string to indicate the kernel name, the allowed values are [].
+#' @param sigma sigma...
+#' @param th value to define warning threshold for eigenvalues.
+#'
+#' @details
+#' This calculation is created based on stat::prcomp function with some adjustments to fit into the purpose of the package. It creates a transformer object including several attribute to perform other functionality.
+#'
+#' @return transformer.pca return a class "transformer" containing the following componenets:
 #'
 #' @export
 #' @examples
@@ -13,8 +22,8 @@
 transformer.kpca <- function (x, ...) UseMethod("transformer.kpca")
 
 transformer.kpca.default <-
-  function(x, kernel = "rbfdot", sigma = 0.1, features = 0, th = 1e-4, na.action = na.omit, ...){
-    x <- na.action(x)
+  function(x, component = 2, center = TRUE, scaling = FALSE, handle_discrete = NULL, kernel = "rbfdot", sigma = 0.1, th = 1e-4, ...){
+    # x <- na.action(x) # para: , na.action = na.omit
     x <- as.matrix(x)
     m <- nrow(x)
 
@@ -38,20 +47,21 @@ transformer.kpca.default <-
     ## compute eigenvectors
     res <- eigen(kc/m,symmetric=TRUE)
 
-    if(res$values[features] < th)
+    if(res$values[component] < th)
       warning(paste("eigenvalues of the kernel matrix are below threshold!"))
 
-    coeff <- t(t(res$vectors[,1:features])/sqrt(res$values[1:features]))
+    coeff <- t(t(res$vectors[,1:component])/sqrt(res$values[1:component]))
 
-    r <- list(sdev = s$d, coef = coeff,
+    r <- list(x = kc %*% coeff,
+              sdev = 0,
+              coef = coeff,
               center = FALSE, # %||% FALSE,
               scale  = FALSE, #  %||% FALSE)
               technique = "kpca",
               prediction=list(kernel = kernel),
               data = x)
 
-    # eig(ret) <- res$values[1:features]
-    r$x <- kc %*% coeff
+    # eig(ret) <- res$values[1:component]
     class(r) <- "transformer"
     r
 }
