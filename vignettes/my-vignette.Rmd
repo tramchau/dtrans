@@ -1,5 +1,5 @@
 ---
-title: "my-vignette"
+title: "dtrans pakage basic usage"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{my-vignette}
@@ -10,7 +10,8 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  fig.height = 5, fig.width = 7.5, fig.align = "center"
 )
 ```
 
@@ -18,30 +19,132 @@ knitr::opts_chunk$set(
 library(dtrans)
 ```
 
-This package is about transformer object which is created by different algorithms including PCA, NMF, and Kernel PCA. It transforms the high 
-dimensionality dataset into a lower one to serve the visualization purpose or dimension reduction tasks.
+This package supports transform data by different algorithms including PCA, NMF, and Kernel PCA. The idea is that the high 
+dimensionality dataset is transformed into a lower dimensionality to serve the visualization purpose or dimension reduction tasks.
 
-Firstly, the object will be simply created with the given dataset:
+Firstly, the iris dataset is split into train and test, such the transformer object is created by train data Then this transformer object is used to transform the test data
+
+Three transformer objects are created based on train data using different technique: pca, nmf, and kpca.
 
 ```{r}
 data("iris")
-#pca <- transformer.pca(iris[,1:4])
-#nmf <- transformer.nmf(iris[,1:4])
-#kpca <- transformer.kpca(iris[,1:4])
+data <- iris[sample(1:nrow(iris)),]
+idx_train <- 1:130
+idx_test <- 131:nrow(data)
+
+pca <- transformer.pca(data[idx_train,1:4])
+nmf <- transformer.nmf(data[idx_train,1:4])
+kpca <- transformer.kpca(data[idx_train,1:4])
 
 ```
 
 The created objects are class 'Transformer' with attributes:
 
 ```{r}
-#attributes(pca)
+attributes(pca)
 ```
 
 * x: transformed data
-* sdev: 
+* sdev: the standard deviation of each feature of original data
 * coef: coefficient of original features to each fitted component
-* center: value used as center to scale data, default is mean of each original feature
+* center: value used to decenter data before transforming
 * scale: value used to scale the data before transforming, default is std of original feature
+* components: number of features after transforming
 * technique: indicate the algorithm used to create the object
 * data: original data
+
+**There are other methods for the S3 class 'transformer':**
+
+* print
+
+```{r}
+print(pca)
+```
+
+* summary
+
+```{r}
+summary(pca)
+```
+
+* plot
+
+```{r}
+par(mfrow=c(1, 2))
+plot(pca)
+plot(pca, point_label=data[idx_train,5])
+par(mfrow=c(1, 1))
+```
+
+* transform: using existing transformer object to transform new data.
+
+```{r}
+t_pca <- transform(pca, data[idx_test,1:4])
+t_pca
+```
+
+* plottrans: tranform new data and plot this new tranformed data 
+
+```{r}
+plottrans(pca, data[idx_test,1:4])
+
+```
+
+* inverse: undo transformation of transformed data
+
+```{r}
+print(inverse(pca, t_pca))
+
+# Original data to compare with the inverse output
+print(data[idx_test,1:4])
+```
+
+## NMF
+
+```{r}
+par(mfrow=c(1, 2))
+plot(nmf)
+plot(nmf, point_label=data[idx_train,5])
+par(mfrow=c(1, 1))
+
+# Transform test data
+t_nmf <- transform(nmf, data[idx_test,1:4])
+print(t_nmf)
+
+# transform and plot data
+plottrans(nmf, data[idx_test,1:4])
+
+print(inverse(nmf, t_nmf))
+
+# Original data to compare with the inverse output
+print(data[idx_test,1:4])
+```
+
+## Kernel PCA
+
+```{r}
+par(mfrow=c(1, 2))
+plot(kpca)
+plot(kpca, point_label=data[idx_train,5])
+par(mfrow=c(1, 1))
+
+
+# Transform test data
+t_kpca <- transform(kpca, data[idx_test,1:4])
+print(t_kpca)
+
+# transform and plot data
+plottrans(kpca, data[idx_test,1:4])
+
+# Inverse test transformed data
+print(inverse(kpca, t_kpca))
+print(data[idx_test,1:4])
+
+# Inverse train transformed data
+print(inverse(kpca, kpca$x[1:10,]))
+print(data[1:10,1:4])
+```
+
+
+
 

@@ -1,93 +1,263 @@
-print.transformer <- function(x, print.x = FALSE, ...) {
-  cat(sprintf("Standard deviations (1, .., p=%d):\n", length(x$sdev)))
-  print(x$sdev, ...)
-  d <- dim(x$coef)
-  cat(sprintf("\nCoefficients (n x k) = (%d x %d):\n", d[1], d[2]))
-  print(x$coef, ...)
-  if (print.x && length(x$x)) {
-    cat("\nRotated variables:\n")
-    print(x$x, ...)
+#' Function printing the output of the transformer object
+#'
+#' @export
+print.transformer <- function(object, ...) {
+    c <- object$component
+  if (object$technique == "pca") {
+    vars <- (object$sdev)^2
+    vars <- sum(vars[1:c]/sum(vars)) * 100
+    cat(sprintf("%d components(s) explain(s) %.2f%% of variance in data.\n", c, vars))
+    cat(sprintf("\nStandard deviations of %d component(s):\n", c))
+    print(object$sdev[1:c], ...)
+    d <- dim(object$coef)
+    cat(sprintf("\nCoefficients of features for %d components:\n", c))
+    print(object$coef, ...)
+  } else if (object$technique == "nmf") {
+
+    cat(sprintf("Algorithm iterates %d times\n", object$others$stop_iter))
+    cat(sprintf("Eucledean distance between data and transformed data * coefficients is %.5f\n", object$others$eucl_dist))
+    cat(sprintf("Relative error between data and transformed data * coefficients is %.5f\n", object$others$relative_err))
+
+    cat(sprintf("Coefficients of features for %d components (or H in NMF):\n", c))
+    print(object$coef, ...)
+
+  } else if (object$technique == "kpca") {
+
+    cat(sprintf("Algorithm sigma %.2f\n", object$others$sigma))
+    # cat("Eigenvalues:\n")
+    # print(object$others$eigenvalues)
+    # cat("\nEigenvectors:\n")
+    # print(object$others$eigenvectors)
   }
-  invisible(x)
+
+  cat("\nReview of transformed data (the first six rows):\n")
+  print(head(object$x), ...)
+  cat("...")
 }
 
+#' Function printing the summary of intermediate algorithm output of the transformer object
+#'
+#' @export
 summary.transformer <- function(object, ...)
 {
   chkDots(...)
-  if (is.null(object$sdev)) {
-    stop("NMF object")
+  if (object$technique=='pca') {
+    vars <- object$sdev^2
+    vars <- vars/sum(vars)
+    importance <- rbind("Standard deviation" = object$sdev,
+                        "Proportion of Variance" = round(vars, 5),
+                        "Cumulative Proportion" = round(cumsum(vars), 5))
+    k <- ncol(object$coef)
+    colnames(importance) <- paste0("PC", seq_len(length(vars)))
+    object$importance <- importance
+  } else {
+    object$sdev <- NULL
+    object$explained_var <- NULL
   }
-  vars <- object$sdev^2
-  vars <- vars/sum(vars)
-  importance <- rbind("Standard deviation" = object$sdev,
-                      "Proportion of Variance" = round(vars, 5),
-                      "Cumulative Proportion" = round(cumsum(vars), 5))
-  k <- ncol(object$coef)
-  colnames(importance) <- c(colnames(object$coef), rep("", length(vars) - k))
-  object$importance <- importance
-  class(object) <- "summary.pca"
+  if (object$technique=='kpca') {
+    object$coef <- NULL
+    object$others$eigenvalues <- NULL
+    object$others$eigenvectors <- NULL
+  }
+
+  object$x <- NULL
+  object$data <- NULL
+  class(object) <- 'summary.trans'
   object
 }
 
-print.summary.transformer <-
-  function(x, digits = max(3L, getOption("digits") - 3L), ...)
-  {
-    dr <- dim(x$coef); k <- dr[2]
-    p <- length(x$sdev)
-    if(k < p) {
-      cat(sprintf("Importance of first k=%d (out of %d) components:\n", k, p))
-      print(x$importance[, 1:k, drop=FALSE], digits = digits, ...)
-    } else {
-      cat("Importance of components:\n")
-      print(x$importance, digits = digits, ...)
-    }
-    invisible(x)
-  }
-
-predict.transformer <- function(object, newdata, ...)
+#' Function transforming new data by the existing transformer object.
+#'
+#' This function return transformed data for new data.
+#' @param object transformer object.
+#' @param new_data new data having the same features to the data instantiate the transformer object.
+#'
+#' @details
+#' This applies the transformer object metadata to transform new data.
+#'
+#' @return a dataset of transformed data.
+#'
+#' @export
+#' @examples
+#' data(iris)
+#' data <- iris[sample(1:nrow(iris)),]
+#' idx_train <- 1:140
+#' idx_test <- 141:nrow(data)
+#' x_trans <- transformer.kpca(iris[idx_train,1:4])
+#' transform(x_trans, iris[idx_test,1:4])
+#'
+#' @method transform transformer
+transform.transformer <- function(object, newdata)
 {
-  chkDots(...)
   if (missing(newdata)) {
-    if(!is.null(object$x)) return(object$x)
-    else stop("no scores are available: refit with 'retx=TRUE'")
+    stop("'newdata' should be specified to call this function.")
+  }
+  if (nrow(newdata) == 0) {
+    stop("'newdata' should contain data")
   }
   if(length(dim(newdata)) != 2L)
-    stop("'newdata' must be a matrix or data frame")
-  nm <- rownames(object$coef)
-  if(!is.null(nm)) {
-    if(!all(nm %in% colnames(newdata)))
-      stop("'newdata' does not have named columns matching one or more of the original columns")
-    newdata <- newdata[, nm, drop = FALSE]
-  } else {
-    if(NCOL(newdata) != NROW(object$coef) )
-      stop("'newdata' does not have the correct number of columns")
+    stop("'newdata' should be a matrix or data frame")
+
+  # check for pca and nmf
+  if (object$technique == "pca" | object$technique ==  'nmf') {
+    nm <- rownames(object$coef)
+    if(!is.null(nm)) {
+      if(!all(nm %in% colnames(newdata)))
+        stop("'newdata' does not have named columns matching one or more of the original columns")
+      newdata <- newdata[, nm, drop = FALSE]
+    }
+    else {
+      if(ncol(newdata) != nrow(object$coef) )
+        stop("'newdata' does not have the correct number of columns")
+    }
   }
-  ## next line does as.matrix
+  x <- scale(newdata, center = object$center, scale = object$scale)
+
   if (object$technique == "pca") {
-    scale(newdata, object$center, FALSE) %*% object$coef
-    #scale(newdata, object$center, object$scale) %*% object$coef
-  }
-  else {
-    H = object$prediction$H
-    W = object$prediction$W
-    eps = object$prediction$eps
-    W = W * t(H %*% t(newdata))/(W %*% (H %*% t(H)) + eps)
-    W
+    return (x %*% object$coef)
+
+  } else if (object$technique == "nmf"){
+    n <- dim(x)[1L]
+    W <- matrix(abs(rnorm(n * object$components)), n, object$components)
+    ret <- .optimize_WH(x, W, t(object$coef), update_H=FALSE)
+    H <- ret$H
+    W <- ret$W
+    return (W)
+
+  } else if (object$technique == "kpca") {
+
+    m <- nrow(x)
+    km <- .calc_rbfkernel_matrix(object$others$sigma, x, object$data)
+    ## center kernel matrix
+    kc <- t(t(km - colSums(km)/m) -  rowSums(km)/m) + sum(km)/m^2
+
+    pcv <- t(t(object$others$eigenvector[,1:object$components])/
+               sqrt(object$others$eigenvalues[1:object$components]))
+
+    ret <- kc %*% pcv
+    colnames(ret) <- paste0("PC", seq_len(object$components))
+    return (ret)
   }
 }
 
+#' @export
+inverse <- function(object, ...) UseMethod("inverse")
 
-plot.transformer <- function(object, label=NULL,...) {
-  chkDots(...)
-  if (is.null(label)) c <- 'black' else c <- label
-  n_comp <- length(colnames(object$coef))
-  if (n_comp == 1) {
-    plot(object$x, ylab= "Component 1")
-  } else if (n_comp == 2) {
-    plot(object$x[,1], object$x[,2],
-         xlab="Component 1", ylab="Component 2", col=c)
-  } else {
-    pairs(object$x)
+inverse.default <- function(object, data, ...) {
+  inverse.transformer(object, data, ...)
+}
+
+#' Function inversing the tranformed data back to the original data.
+#'
+#' This function inverses the transformed data back to the original data based on the transformer object's attributes.
+#' @param object transformer object.
+#' @param data dataframe being inversed.
+#'
+#' @details
+#' This function inverses the transformed data back to the original if using all set components. The inverse can happen partly for specific component to analyse the effect of components.
+#'
+#' @return a dataset after inversing.
+#'
+#' @export
+#' @examples
+#' data(iris)
+#' iris[1:10,1:4]
+#' x_trans <- transformer.kpca(iris[1:10,1:4])
+#' inverse(x_trans, x_trans$x)
+#'
+inverse.transformer <- function(object, data, ...) {
+
+  # pca
+  if (object$technique == "pca" | object$technique == "nmf") {
+    data_coef <- (data %*% t(object$coef))
+  } else if (object$technique == "kpca") {
+
+    m <- nrow(data)
+    kmc <- .calc_rbfkernel_matrix(object$others$sigma, data, object$x)
+    #kmc <- t(t(km - colSums(km)/m) -  rowSums(km)/m) + sum(km)/m^2
+
+    m <- nrow(object$x)
+    kxc <- .calc_rbfkernel_matrix(object$others$sigma, object$x)
+    #kxc <- t(t(kx - colSums(kx)/m) -  rowSums(kx)/m) + sum(kx)/m^2
+    dual_coef <- backsolve(kxc, object$data)
+    data_coef <- kmc %*% dual_coef
   }
 
+  if (isFALSE(object$scale)) {sc <- F} else {sc = 1/object$scale}
+  return (scale(data_coef, center = object$center, scale = sc))
+}
+
+#' Function plotting the transformed data.
+#'
+#' This function plots the transformed data.
+#' @param object transformer object.
+#' @param point_label optional label for each data point, default is NULL, all data points are plotted in black. If labels is set, the data points' colors are encoded accordingly.
+#'
+#' @details
+#' This function
+#'
+#' @export
+plot.transformer <- function(object, point_label=NULL,...) {
+  .plotting(object$x, label = point_label, title=object$technique)
+}
+
+#' @export
+plottrans <- function(object, ...) UseMethod("plottrans")
+
+#' Function transforming and plotting the transformed data.
+#'
+#' This function transforms data and plots the transformed data.
+#' @param object transformer object.
+#' @param new_data new data having the same features to the data instantiate the transformer object.
+#' @param point_label label for each data point, default is NULL, all data points are plotted in black. If labels is setted, the data points' color is encoded accordingly.
+#'
+#' @details
+#' This function
+#'
+#' @export
+plottrans.transformer <- function(object, new_data, point_label=NULL,...) {
+
+  trans_data <- transform(object, new_data)
+  .plotting(trans_data, label = point_label, title=object$technique)
+
+}
+
+.plotting <- function(data, label=NULL, title_=NULL, ...) {
+  if (is.null(label)) {
+    c <- 'black'
+  } else c <- label
+  n_comp <- ncol(data)
+  if (n_comp == 1) {
+    plot(data, ylab= "Component 1", ...)
+  } else if (n_comp == 2) {
+    plot(data[,1], data[,2],
+         xlab="Component 1", ylab="Component 2", col=c, ...)
+  } else {
+    pairs(data)
+  }
+  title(main=title_)
+}
+
+.validate_instantiate_input <- function(x, components, center, scaling, handle_discrete) {
+  if (!is.data.frame(x)) stop("'x' should be a dataframe.")
+  if (ncol(x) <= 1) stop("'x' should have more than 1 column.")
+  if (nrow(x) == 0) stop("'x' is empty, it should have data.")
+  if (!is.numeric(components))
+    stop("'components' should be an integer.")
+  if (length(components) > 1)
+    stop("'components' should be an integer.")
+  if (ceiling(components) != components | components < 1)
+    stop("'components' should be an integer greater than 0.")
+
+  if ((length(center)==1 & (!is.logical(center))) |
+      (length(center)>1 & !(length(center) == ncol(x))))
+    stop("'center should be a logical value or a numeric vector having same length with column numbers of x.")
+
+  if ((length(scaling)==1 & (!is.logical(scaling))) |
+      (length(scaling)>1 & (length(scaling) != ncol(x))) |
+      (!is.logical(scaling) & any(scaling == 0)))
+    stop("'scaling' should be a logical value or a non-zero numeric vector having same length with column numbers of x.")
+
+  if (!is.logical(handle_discrete) | length(handle_discrete) > 1)
+    stop("'handle_discrete' parameter should be single boonlean")
 }

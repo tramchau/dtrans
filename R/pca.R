@@ -1,7 +1,7 @@
-#' Function creating a transformer object from a dataset using PCA algorithm.
+#' Function creating a transformer object using PCA algorithm.
 #'
 #' This function return a transformer object fitted by data.
-#' @param component positive number of components for the transformed data.
+#' @param components positive number of components for the transformed data.
 #' @param center boolean value to scale data. Parameter is passed to base::scale.
 #' @param scaling boolean value to scale data. Parameter is passed to base::scale.
 #' @param handle_discrete boolean value to handle discrete features in data.
@@ -16,29 +16,35 @@
 #' data(iris)
 #' x_trans <- transformer.pca(iris[,1:4])
 #'
-transformer.pca <-
-  function(x, component = 2, center = TRUE, scaling = FALSE, handle_discrete = NULL, ...)
-  {
-    #chkDots(...)
-    x <- as.matrix(x)
-    x <- scale(x, center = center, scale = scaling)
-    cen <- attr(x, "scaled:center")
-    sc <- attr(x, "scaled:scale")
-    if(any(sc == 0))
-      stop("cannot rescale a constant/zero column to unit variance")
-    s <- svd(x, nu = 0, nv = component)
-    j <- seq_len(component)
-    s$d <- s$d / sqrt(max(1, nrow(x) - 1))
+transformer.pca <- function(x, components = 2, center = FALSE, scaling = FALSE, handle_discrete = FALSE) {
+  # Validate input
+  .validate_instantiate_input(x, components, center, scaling, handle_discrete)
 
-    dimnames(s$v) <- list(colnames(x), paste0("PC", j))
-    r <- list(x = x %*% s$v,
-              sdev = s$d,
-              coef = s$v,
-              center = cen, # %||% FALSE,
-              scale  = sc, #  %||% FALSE)
-              technique = "pca")
+  x <- as.matrix(x)
+  x <- scale(x, center = center, scale = scaling)
+  cen <- attr(x, "scaled:center")
+  sc <- attr(x, "scaled:scale")
+  if(any(sc == 0))
+    stop("data should not be scaled with the scaling option, because there is at least one constant or zero column in data.")
 
-    class(r) <- "transformer"
-    r
-  }
+  s <- svd(x, nu = 0, nv = components)
+  s$d <- s$d / sqrt(max(1, nrow(x) - 1))
+  explained_var <- s$d^2 / sum(s$d^2)
 
+  j <- seq_len(components)
+  dimnames(s$v) <- list(colnames(x), paste0("PC", j))
+  if (is.null(sc)) sc <- FALSE
+  if (is.null(cen)) cen <- FALSE
+
+  r <- list(x = x %*% s$v,
+            coef = s$v,
+            sdev = s$d,
+            explained_var = explained_var,
+            components = components,
+            center = cen,
+            scale  = sc,
+            technique = "pca")
+
+  class(r) <- "transformer"
+  r
+}

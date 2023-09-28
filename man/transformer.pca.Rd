@@ -2,19 +2,18 @@
 % Please edit documentation in R/pca.R
 \name{transformer.pca}
 \alias{transformer.pca}
-\title{Function creating a transformer object from a dataset using PCA algorithm.}
+\title{Function creating a transformer object using PCA algorithm.}
 \usage{
 transformer.pca(
   x,
-  component = 2,
-  center = TRUE,
+  components = 2,
+  center = FALSE,
   scaling = FALSE,
-  handle_discrete = NULL,
-  ...
+  handle_discrete = FALSE
 )
 }
 \arguments{
-\item{component}{positive number of components for the transformed data.}
+\item{components}{positive number of components for the transformed data.}
 
 \item{center}{boolean value to scale data. Parameter is passed to base::scale.}
 

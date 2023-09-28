@@ -2,12 +2,20 @@
 % Please edit documentation in R/kpca.R
 \name{transformer.kpca}
 \alias{transformer.kpca}
-\title{Function creating a transformer object by PCA algorithm.}
+\title{Function creating a transformer object by Kernel PCA algorithm.}
 \usage{
-transformer.kpca(x, ...)
+transformer.kpca(
+  x,
+  components = 2,
+  center = FALSE,
+  scaling = FALSE,
+  handle_discrete = FALSE,
+  kernel = "rbfdot",
+  sigma = 0.1
+)
 }
 \arguments{
-\item{component}{positive number of components for the transformed data.}
+\item{components}{positive number of components for the transformed data.}
 
 \item{center}{boolean value to scale data. Parameter is passed to base::scale.}
 
@@ -15,17 +23,15 @@ transformer.kpca(x, ...)
 
 \item{handle_discrete}{boolean value to handle discrete features in data.}
 
-\item{kernel}{string to indicate the kernel name, the allowed values are [].}
+\item{kernel}{string to indicate the kernel name. Currently, 'rbfdot' is allowed.}
 
-\item{sigma}{sigma...}
-
-\item{th}{value to define warning threshold for eigenvalues.}
+\item{sigma}{numeric value to indicate the inverse kernel width for the Radial Basis kernel function "rbfdot".}
 }
 \value{
 transformer.pca return a class "transformer" containing the following componenets:
 }
 \description{
-This function return a transformer object fitted by data.
+This function create a transformer object fitted by data.
 }
 \details{
 This calculation is created based on stat::prcomp function with some adjustments to fit into the purpose of the package. It creates a transformer object including several attribute to perform other functionality.

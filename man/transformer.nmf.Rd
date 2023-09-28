@@ -2,29 +2,39 @@
 % Please edit documentation in R/nmf.R
 \name{transformer.nmf}
 \alias{transformer.nmf}
-\title{Function creating a transformer object by NMF algorithm (Lee et al. 2001 based on Euclidean distance)}
+\title{Function creating a transformer object by NMF algorithm}
 \usage{
-transformer.nmf(x, ...)
+transformer.nmf(
+  x,
+  components = 2,
+  center = FALSE,
+  scaling = FALSE,
+  handle_discrete = FALSE,
+  max_iter = 1000
+)
 }
 \arguments{
-\item{component}{positive number of components for the transformed data, default is 2.}
+\item{components}{whole number greater than 0 set the target reduced dimensions for the transformed data, default is 2.}
 
-\item{center}{boolean value to scale data. Parameter is passed to base::scale.}
+\item{center}{boolean value or a numeric vector corresponding to dataset's columns. Parameter is passed to base::scale.}
 
-\item{scaling}{boolean value to scale data. Parameter is passed to base::scale.}
+\item{scaling}{boolean value or a numeric vector corresponding to dataset's columns. Parameter is passed to base::scale.}
 
 \item{handle_discrete}{boolean value to handle discrete features in data.}
 
 \item{max_iter}{positive number to limit the iteration, default is 1000.}
 }
 \value{
-transformer.nmf return a class "transformer" containing the following components:
+trans_nmf return a list with class "transformer" containing the following components:
+\item{x}{transformed data.}
+\item{center}{value of center using for scaling data.}
+\item{scale}{value of scale using for scaling data.}
 }
 \description{
-This function return a transformer object fitted by data.
+This function create a transformer object based on the dataset. There are the other settings to preprocessing this dataset before creating the object.
 }
 \details{
-This calculation is created based on NMFN::nmf function with some adjustments to fit into the purpose of the package. It creates a transformer object including several attributes to perform other functionalities.
+This calculation is created based on NMFN::nnmf function (Lee et al. 2001 based on Euclidean distance). It creates a transformer object including the transformed data and other attributes of extra information regarding to the tranforming process by the algorithm.
 }
 \examples{
 data(iris)
