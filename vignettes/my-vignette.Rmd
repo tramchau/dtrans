@@ -29,6 +29,7 @@ Three transformer objects are created based on train data using different techni
 ```{r}
 data("iris")
 data <- iris[sample(1:nrow(iris)),]
+rownames(data) <- 1:nrow(data)
 idx_train <- 1:130
 idx_test <- 131:nrow(data)
 
@@ -45,13 +46,25 @@ attributes(pca)
 ```
 
 * x: transformed data
-* sdev: the standard deviation of each feature of original data
-* coef: coefficient of original features to each fitted component
 * center: value used to decenter data before transforming
 * scale: value used to scale the data before transforming, default is std of original feature
 * components: number of features after transforming
 * technique: indicate the algorithm used to create the object
-* data: original data
+* fit_data: data used to create the transformer object (data is after being scaled)
+* others: attributes for each algorithms
+    * pca:
+        * sdev: the standard deviation of each feature of original data.
+        * coef: coefficient of original features to each fitted component.
+        * explained_var: the percentage of variance being explained by the each components.
+    * nmf:
+        * coef: coefficient (H) of original features to each fitted component.
+        * eucl_dist: eclidean distant between fitted data and the transformed data multiplied by coefficient H.
+        * relative_err: relateive error between fitted data and the transformed data multiplied by coefficient H.
+        * stop_iter: number of interations ran.
+    * kpca:
+        * sigma: the inverse kernel width for the Radial Basis kernel function "rbfdot".
+        * eigenvalues: eigenvalues of the kernel matrix for transformation.
+        * eigenvectors: eigenvectors of the kernel matrix for transformation.
 
 **There are other methods for the S3 class 'transformer':**
 

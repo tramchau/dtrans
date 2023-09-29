@@ -27,7 +27,7 @@ transformer.nmf <- function (x, components=2, center = FALSE, scaling = FALSE, h
 
   # extra input for nmf
   if (!is.numeric(max_iter) | length(max_iter) > 1 | ceiling(max_iter) != max_iter)
-    stop("max_iter should be an positive interger number.")
+    stop("max_iter should be a positive interger number.")
 
   x <- as.matrix(x)
 
@@ -46,7 +46,7 @@ transformer.nmf <- function (x, components=2, center = FALSE, scaling = FALSE, h
   if (!n || !m) stop("0 extent dimensions")
   W <- matrix(abs(rnorm(n * components)), n, components)
   H <- matrix(abs(rnorm(components * m)), components, m)
-  ret <- .optimize_WH(x, W, H)
+  ret <- .optimize_WH(x, W, H, update_H=TRUE, max_iter)
   H <- ret$H
   W <- ret$W
   HT <- t(H)
@@ -57,14 +57,13 @@ transformer.nmf <- function (x, components=2, center = FALSE, scaling = FALSE, h
   if (is.null(cen)) cen <- FALSE
 
   z <- c(list(x = W,
-              coef = HT,
-              sdev = NULL,
-              explained_var = NULL,
               components = components,
               center = cen,
               scale = sc,
               technique = "nmf",
-              others = list(eucl_dist=ret$eucl_dist,
+              fit_data = x,
+              others = list(coef = HT,
+                            eucl_dist=ret$eucl_dist,
                             relative_err=ret$relative_err,
                             stop_iter=ret$stop_iter)
               )

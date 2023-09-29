@@ -2,24 +2,23 @@
 #'
 #' @export
 print.transformer <- function(object, ...) {
-    c <- object$component
+  .validate_object(object)
+  c <- object$component
   if (object$technique == "pca") {
-    vars <- (object$sdev)^2
-    vars <- sum(vars[1:c]/sum(vars)) * 100
-    cat(sprintf("%d components(s) explain(s) %.2f%% of variance in data.\n", c, vars))
+    cat(sprintf("%d components(s) explain(s) %.2f%% of variance in data.\n", c, sum(object$others$explained_var[1:c])))
     cat(sprintf("\nStandard deviations of %d component(s):\n", c))
-    print(object$sdev[1:c], ...)
-    d <- dim(object$coef)
+    print(object$others$sdev[1:c], ...)
+    d <- dim(object$others$coef)
     cat(sprintf("\nCoefficients of features for %d components:\n", c))
-    print(object$coef, ...)
+    print(object$others$coef, ...)
   } else if (object$technique == "nmf") {
 
     cat(sprintf("Algorithm iterates %d times\n", object$others$stop_iter))
-    cat(sprintf("Eucledean distance between data and transformed data * coefficients is %.5f\n", object$others$eucl_dist))
+    cat(sprintf("Euclidean distance between data and transformed data * coefficients is %.5f\n", object$others$eucl_dist))
     cat(sprintf("Relative error between data and transformed data * coefficients is %.5f\n", object$others$relative_err))
 
     cat(sprintf("Coefficients of features for %d components (or H in NMF):\n", c))
-    print(object$coef, ...)
+    print(object$others$coef, ...)
 
   } else if (object$technique == "kpca") {
 
@@ -40,28 +39,21 @@ print.transformer <- function(object, ...) {
 #' @export
 summary.transformer <- function(object, ...)
 {
-  chkDots(...)
+  .validate_object(object)
+
   if (object$technique=='pca') {
-    vars <- object$sdev^2
+    vars <- object$others$sdev^2
     vars <- vars/sum(vars)
-    importance <- rbind("Standard deviation" = object$sdev,
+    importance <- rbind("Standard deviation" = object$others$sdev,
                         "Proportion of Variance" = round(vars, 5),
                         "Cumulative Proportion" = round(cumsum(vars), 5))
-    k <- ncol(object$coef)
+    k <- ncol(object$others$coef)
     colnames(importance) <- paste0("PC", seq_len(length(vars)))
     object$importance <- importance
-  } else {
-    object$sdev <- NULL
-    object$explained_var <- NULL
   }
-  if (object$technique=='kpca') {
-    object$coef <- NULL
-    object$others$eigenvalues <- NULL
-    object$others$eigenvectors <- NULL
-  }
-
   object$x <- NULL
-  object$data <- NULL
+  object$fit_data <- NULL
+  object$others <- NULL
   class(object) <- 'summary.trans'
   object
 }
@@ -89,6 +81,8 @@ summary.transformer <- function(object, ...)
 #' @method transform transformer
 transform.transformer <- function(object, newdata)
 {
+  .validate_object(object)
+
   if (missing(newdata)) {
     stop("'newdata' should be specified to call this function.")
   }
@@ -98,28 +92,25 @@ transform.transformer <- function(object, newdata)
   if(length(dim(newdata)) != 2L)
     stop("'newdata' should be a matrix or data frame")
 
-  # check for pca and nmf
-  if (object$technique == "pca" | object$technique ==  'nmf') {
-    nm <- rownames(object$coef)
-    if(!is.null(nm)) {
-      if(!all(nm %in% colnames(newdata)))
-        stop("'newdata' does not have named columns matching one or more of the original columns")
-      newdata <- newdata[, nm, drop = FALSE]
-    }
-    else {
-      if(ncol(newdata) != nrow(object$coef) )
-        stop("'newdata' does not have the correct number of columns")
-    }
+  if(ncol(newdata) != ncol(object$fit_data)) {
+    cn <- colnames(object$fit_data)
+    stop("'newdata' does not have the same columns with the object's fit data. The columns should be ", c(paste0(cn[-length(cn)], ", "), cn[length(cn)]))
   }
+  # check for pca and nmf
+  nm <- colnames(object$fit_data)
+  if(!all(nm %in% colnames(newdata)))
+    stop("'newdata' does not have named columns matching the fit data's. The columns should be ", colnames(object$fit_data))
+  newdata <- newdata[, nm, drop = FALSE]
+
   x <- scale(newdata, center = object$center, scale = object$scale)
 
   if (object$technique == "pca") {
-    return (x %*% object$coef)
+    return (x %*% object$others$coef)
 
   } else if (object$technique == "nmf"){
     n <- dim(x)[1L]
     W <- matrix(abs(rnorm(n * object$components)), n, object$components)
-    ret <- .optimize_WH(x, W, t(object$coef), update_H=FALSE)
+    ret <- .optimize_WH(x, W, t(object$others$coef), update_H=FALSE)
     H <- ret$H
     W <- ret$W
     return (W)
@@ -127,7 +118,7 @@ transform.transformer <- function(object, newdata)
   } else if (object$technique == "kpca") {
 
     m <- nrow(x)
-    km <- .calc_rbfkernel_matrix(object$others$sigma, x, object$data)
+    km <- .calc_rbfkernel_matrix(object$others$sigma, x, object$fit_data)
     ## center kernel matrix
     kc <- t(t(km - colSums(km)/m) -  rowSums(km)/m) + sum(km)/m^2
 
@@ -167,9 +158,10 @@ inverse.default <- function(object, data, ...) {
 #'
 inverse.transformer <- function(object, data, ...) {
 
+  .validate_object(object)
   # pca
   if (object$technique == "pca" | object$technique == "nmf") {
-    data_coef <- (data %*% t(object$coef))
+    data_coef <- (data %*% t(object$others$coef))
   } else if (object$technique == "kpca") {
 
     m <- nrow(data)
@@ -179,7 +171,7 @@ inverse.transformer <- function(object, data, ...) {
     m <- nrow(object$x)
     kxc <- .calc_rbfkernel_matrix(object$others$sigma, object$x)
     #kxc <- t(t(kx - colSums(kx)/m) -  rowSums(kx)/m) + sum(kx)/m^2
-    dual_coef <- backsolve(kxc, object$data)
+    dual_coef <- backsolve(kxc, object$fit_data)
     data_coef <- kmc %*% dual_coef
   }
 
@@ -198,6 +190,7 @@ inverse.transformer <- function(object, data, ...) {
 #'
 #' @export
 plot.transformer <- function(object, point_label=NULL,...) {
+  .validate_object(object)
   .plotting(object$x, label = point_label, title=object$technique)
 }
 
@@ -217,6 +210,7 @@ plottrans <- function(object, ...) UseMethod("plottrans")
 #' @export
 plottrans.transformer <- function(object, new_data, point_label=NULL,...) {
 
+  .validate_object(object)
   trans_data <- transform(object, new_data)
   .plotting(trans_data, label = point_label, title=object$technique)
 
@@ -248,16 +242,49 @@ plottrans.transformer <- function(object, new_data, point_label=NULL,...) {
     stop("'components' should be an integer.")
   if (ceiling(components) != components | components < 1)
     stop("'components' should be an integer greater than 0.")
+  if(components > ncol(x))
+    stop("'components' should be less than or equal to the dataset's column number")
 
-  if ((length(center)==1 & (!is.logical(center))) |
-      (length(center)>1 & !(length(center) == ncol(x))))
-    stop("'center should be a logical value or a numeric vector having same length with column numbers of x.")
+  if ((length(center)==1 & (!is.logical(center))))
+    stop("'center' should be a logical value or a numeric vector having same length with number of columns of x.")
+  if (length(center)>1 & (length(center) != ncol(x) | !is.numeric(center)))
+    stop("'center' should have a same length with number of columns of x.")
 
-  if ((length(scaling)==1 & (!is.logical(scaling))) |
-      (length(scaling)>1 & (length(scaling) != ncol(x))) |
-      (!is.logical(scaling) & any(scaling == 0)))
+  if ((length(scaling)==1 & (!is.logical(scaling))))
     stop("'scaling' should be a logical value or a non-zero numeric vector having same length with column numbers of x.")
+
+  if ((length(scaling)>1 & (length(scaling) != ncol(x) | !is.numeric(scaling))) |
+      (!is.logical(scaling) & any(scaling == 0)))
+    stop("'scaling' should be non-zero and have same length with the number of columns of x.")
 
   if (!is.logical(handle_discrete) | length(handle_discrete) > 1)
     stop("'handle_discrete' parameter should be single boonlean")
+}
+
+.validate_object <- function(object) {
+  #if (class(object) != "Transformer") # No need to check, as all method is S3 method of transformer object.
+  if (!(is.list(object))) stop("'transformer' object is coerced to invalid format, can't retrieve it's attributes")
+
+  if (is.null(attributes(object)))
+    stop("'transformer' object is coerced and does not have any attributes.")
+
+  obj_attr_list <- list("x", "components",
+                        "center", "scale", "technique", "fit_data", "others")
+  if (!(all(attributes(object)$names %in% obj_attr_list)))
+    stop("'transformer' object is coerced and having invalid or missing attributes.")
+  # check others atribute for each technique
+  if (object$technique == 'pca') {
+    others_attr_list <- list("coef", "sdev", "explained_var")
+    if (!(all(attributes(object$others)$names %in% others_attr_list)))
+      stop("'transformer' object is coerced and having invalid or missing attributes.")
+  } else if (object$technique == 'nmf') {
+    others_attr_list <- list("coef", "eucl_dist", "relative_err", "stop_iter")
+    if (!(all(attributes(object$others)$names %in% others_attr_list)))
+      stop("'transformer' object is coerced and having invalid or missing attributes.")
+  } else if (object$technique == 'kpca') {
+    others_attr_list <- list("sigma", "eigenvalues", "eigenvectors")
+    if (!(all(attributes(object$others)$names %in% others_attr_list)))
+      stop("'transformer' object is coerced and having invalid or missing attributes.")
+  }
+
 }

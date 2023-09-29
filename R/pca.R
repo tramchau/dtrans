@@ -37,13 +37,14 @@ transformer.pca <- function(x, components = 2, center = FALSE, scaling = FALSE, 
   if (is.null(cen)) cen <- FALSE
 
   r <- list(x = x %*% s$v,
-            coef = s$v,
-            sdev = s$d,
-            explained_var = explained_var,
             components = components,
             center = cen,
             scale  = sc,
-            technique = "pca")
+            technique = "pca",
+            fit_data = x,
+            others = list(coef = s$v,
+                          sdev = s$d,
+                          explained_var = explained_var))
 
   class(r) <- "transformer"
   r

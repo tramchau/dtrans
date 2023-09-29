@@ -55,14 +55,11 @@ transformer.kpca <- function(x, components = 2, center = FALSE, scaling = FALSE,
   if (is.null(cen)) cen <- FALSE
 
   r <- list(x = kc %*% pcv,
-            coef = NULL,
-            sdev = NULL,
-            explained_var = NULL,
             components = components,
             center = cen, # %||% FALSE,
             scale  = sc, #  %||% FALSE)
             technique = "kpca",
-            data = x,
+            fit_data = x,
             others=list(sigma = sigma,
                         eigenvalues = res$value,
                         eigenvectors = res$vectors)

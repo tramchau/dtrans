@@ -1,3 +1,7 @@
 ^dtrans\.Rproj$
 ^\.Rproj\.user$
 ^Report$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^\.github$
