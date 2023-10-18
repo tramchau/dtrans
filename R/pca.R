@@ -15,7 +15,7 @@
 #' @examples
 #' data(iris)
 #' x_trans <- transformer.pca(iris[,1:4])
-#' @import Rcpp
+
 transformer.pca <- function(x, components = 2, center = FALSE, scaling = FALSE, handle_discrete = FALSE) {
   # Validate input
   .validate_instantiate_input(x, components, center, scaling, handle_discrete)
