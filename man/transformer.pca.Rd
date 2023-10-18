@@ -33,5 +33,4 @@ This calculation is created based on stat::prcomp function with some adjustments
 \examples{
 data(iris)
 x_trans <- transformer.pca(iris[,1:4])
-
 }

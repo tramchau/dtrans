@@ -46,7 +46,8 @@ transformer.nmf <- function (x, components=2, center = FALSE, scaling = FALSE, h
   if (!n || !m) stop("0 extent dimensions")
   W <- matrix(abs(rnorm(n * components)), n, components)
   H <- matrix(abs(rnorm(components * m)), components, m)
-  ret <- .optimize_WH(x, W, H, update_H=TRUE, max_iter)
+  # ret <- .optimize_WH(x, W, H, update_H=TRUE, max_iter)
+  ret <- .Call('_dtrans_rcpp_optimize_WH', x, W, H, TRUE, max_iter)
   H <- ret$H
   W <- ret$W
   HT <- t(H)
@@ -73,25 +74,70 @@ transformer.nmf <- function (x, components=2, center = FALSE, scaling = FALSE, h
   z
 }
 
+transformer.nmf.perf <- function (x, components=2, center = FALSE, scaling = FALSE, handle_discrete = FALSE, max_iter = 1000, W, H, type='baser') {
+  # Validate input
+  .validate_instantiate_input(x, components, center, scaling, handle_discrete)
+  
+  # extra input for nmf
+  if (!is.numeric(max_iter) | length(max_iter) > 1 | ceiling(max_iter) != max_iter)
+    stop("max_iter should be a positive interger number.")
+  
+  x <- as.matrix(x)
+  
+  if (any(x<0)) stop("Negative value in x")
+  
+  x <- scale(x, center = center, scale = scaling)
+  cen <- attr(x, "scaled:center")
+  sc <- attr(x, "scaled:scale")
+  
+  if (any(x<0) & center == TRUE) stop("Negative value in x due to center parameter")
+  
+  if (any(!is.finite(x))) stop("infinite or missing values in 'x'")
+  dx <- dim(x)
+  n <- dx[1L]
+  m <- dx[2L]
+  if (!n || !m) stop("0 extent dimensions")
+  # W <- matrix(abs(rnorm(n * components)), n, components)
+  # H <- matrix(abs(rnorm(components * m)), components, m)
+  if (type == "baser") ret <- .optimize_WH(x, W, H, update_H=TRUE, max_iter)
+  else ret <- .Call('_dtrans_rcpp_optimize_WH', x, W, H, TRUE, max_iter)
+
+  H <- ret$H
+  W <- ret$W
+  HT <- t(H)
+  colnames(HT) <- paste("PC", 1:components, sep="")
+  colnames(W) <- paste("PC", 1:components, sep="")
+  
+  if (is.null(sc)) sc <- FALSE
+  if (is.null(cen)) cen <- FALSE
+  
+  z <- c(list(x = W,
+              components = components,
+              center = cen,
+              scale = sc,
+              technique = "nmf",
+              fit_data = x,
+              others = list(coef = HT,
+                            eucl_dist=ret$eucl_dist,
+                            relative_err=ret$relative_err,
+                            stop_iter=ret$stop_iter)
+  )
+  #handle_discrete = handle_discrete)
+  )
+  class(z) <- "transformer"
+  z
+}
+
 .optimize_WH <- function(x, W, H, update_H=TRUE, max_iter = 1000) {
   eps <- 2.2204e-16
 
-  err <- c()
   for (iter in 1:max_iter) {
-    if (update_H)
+    if (update_H) {
       H <- H * (t(W) %*% x)/((t(W) %*% W) %*% H + eps)
+    }
 
     W <- W * t(H %*% t(x))/(W %*% (H %*% t(H)) + eps)
 
-    # errorx <- mean(abs(x - W %*% H))/mean(x)
-    # err <- c(err, errorx)
-    # if (iter > 100) {
-    #   if (round(mean(err[(iter-100):(iter-1)]), 8) == round(errorx, 8)) {
-    #     message("Converge at iteration = ", iter, "\n")
-    #     break
-    #   }
-    # }
-    eucl_dist <- .distance2(x, W %*% H)
     errorx <- mean(abs(x - W %*% H))/mean(x)
 
     if (errorx < 1e-05) {
@@ -99,6 +145,7 @@ transformer.nmf <- function (x, components=2, center = FALSE, scaling = FALSE, h
       break
     }
   }
+  eucl_dist <- .distance2(x, W %*% H)
 
   ret <- c(list(W = W, H = H, eucl_dist=eucl_dist, relative_err=errorx, stop_iter=iter))
   ret
