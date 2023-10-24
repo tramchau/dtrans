@@ -21,11 +21,11 @@ transformer.kpca(
 
 \item{scaling}{boolean value to scale data. Parameter is passed to base::scale.}
 
-\item{handle_category}{character value to handle discrete features in data either by 'label' or 'onehot'.}
+\item{handle_category}{character value to handle categorical features. The accepted values are 'label', 'onehot', and 'ignore'. Default value is NULL, if dataset contains character fields, the function return error. .}
 
 \item{kernel}{string to indicate the kernel name. Currently, 'rbfdot' is allowed.}
 
-\item{sigma}{numeric value to indicate the inverse kernel width for the Radial Basis kernel function "rbfdot".}
+\item{sigma}{numeric value to indicate the inverse kernel width for the Radial Basis kernel function "rbfdot". The smaller of sigma, the more non-linear of the decision boundary.}
 }
 \value{
 transformer.pca return a class "transformer" containing the following componenets:

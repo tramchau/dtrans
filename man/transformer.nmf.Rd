@@ -20,7 +20,7 @@ transformer.nmf(
 
 \item{scaling}{boolean value or a numeric vector corresponding to dataset's columns. Parameter is passed to base::scale.}
 
-\item{handle_category}{character value to handle discrete features in data either by 'label' or 'onehot'.}
+\item{handle_category}{character value to handle categorical features. The accepted values are 'label', 'onehot', and 'ignore'. Default value is NULL, if dataset contains character fields, the function return error. .}
 
 \item{max_iter}{positive number to limit the iteration, default is 1000.}
 }

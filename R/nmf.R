@@ -4,7 +4,7 @@
 #' @param components whole number greater than 0 set the target reduced dimensions for the transformed data, default is 2.
 #' @param center boolean value or a numeric vector corresponding to dataset's columns. Parameter is passed to base::scale.
 #' @param scaling boolean value or a numeric vector corresponding to dataset's columns. Parameter is passed to base::scale.
-#' @param handle_category character value to handle discrete features in data either by 'label' or 'onehot'.
+#' @param handle_category character value to handle categorical features. The accepted values are 'label', 'onehot', and 'ignore'. Default value is NULL, if dataset contains character fields, the function return error. .
 #' @param max_iter positive number to limit the iteration, default is 1000.
 #'
 #' @details
@@ -25,13 +25,13 @@ transformer.nmf <- function (x, components=2, center = FALSE, scaling = FALSE, h
   # Validate input
   .validate_input(x, components, center, scaling, handle_category)
   
-  if (!(is.null(handle_category)) & any(sapply(x, is.factor)))
+  if (!(is.null(handle_category)) & (any(sapply(x, is.factor)) | any(sapply(x, is.character))))
     x <- .handle_category(x, handle_category)
   
   # extra input for nmf
   if (!is.numeric(max_iter) | length(max_iter) > 1 | ceiling(max_iter) != max_iter)
     stop("max_iter should be a positive interger number.")
-  xorig <- x
+
   x <- as.matrix(x)
 
   if (any(x<0)) stop("Negative value in x")
@@ -40,8 +40,13 @@ transformer.nmf <- function (x, components=2, center = FALSE, scaling = FALSE, h
   cen <- attr(x, "scaled:center")
   sc <- attr(x, "scaled:scale")
 
-  if (any(x<0) & center == TRUE) stop("Negative value in x due to center parameter")
-
+  if (any(x<0)) {
+    if(length(center) ==1)
+      if (center == TRUE) stop("NMF is not for negative data. (Negative value in x due to center=TRUE)")
+      else stop("NMF is not for negative data. ('x' contains egative values)")
+    else if (length(center) > 1) stop("NMF is not for negative data. (Negative value in x due to center parameter setting)")
+    else stop("NMF is not for negative data. ('x' contains egative values)")
+  }
   if (any(!is.finite(x))) stop("infinite or missing values in 'x'")
   dx <- dim(x)
   n <- dx[1L]
@@ -64,6 +69,7 @@ transformer.nmf <- function (x, components=2, center = FALSE, scaling = FALSE, h
               components = components,
               center = cen,
               scale = sc,
+              handle_category = handle_category,
               technique = "nmf",
               fit_data = x,
               others = list(coef = HT,
@@ -118,15 +124,15 @@ transformer.nmf.perf <- function (x, components=2, center = FALSE, scaling = FAL
               components = components,
               center = cen,
               scale = sc,
+              handle_category = handle_category,
               technique = "nmf",
               fit_data = x,
               others = list(coef = HT,
                             eucl_dist=ret$eucl_dist,
                             relative_err=ret$relative_err,
                             stop_iter=ret$stop_iter)
-  )
-  #handle_category = handle_category)
-  )
+              )
+         )
   class(z) <- "transformer"
   z
 }
@@ -144,7 +150,8 @@ transformer.nmf.perf <- function (x, components=2, center = FALSE, scaling = FAL
     errorx <- mean(abs(x - W %*% H))/mean(x)
 
     if (errorx < 1e-05) {
-      cat("Execution finishes at iteration = ", iter, "\n")
+      # cat(paste0("Execution finishes at iteration = ", iter, 
+      #            " before the maximum iteration as optimizing error < 1e-05"))
       break
     }
   }

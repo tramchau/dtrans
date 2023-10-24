@@ -4,7 +4,7 @@
 #' @param components positive number of components for the transformed data.
 #' @param center boolean value to scale data. Parameter is passed to base::scale.
 #' @param scaling boolean value to scale data. Parameter is passed to base::scale.
-#' @param handle_category character value to handle discrete features in data either by 'label' or 'onehot'.
+#' @param handle_category character value to handle categorical features. The accepted values are 'label', 'onehot', and 'ignore'. Default value is NULL, if dataset contains character fields, the function return error. .
 #'
 #' @details
 #' This calculation is created based on stat::prcomp function with some adjustments to fit into the purpose of the package. It creates a transformer object including several attribute to perform other functionality.
@@ -20,7 +20,7 @@ transformer.pca <- function(x, components = 2, center = FALSE, scaling = FALSE, 
   # Validate input
   .validate_input(x, components, center, scaling, handle_category)
   
-  if (!(is.null(handle_category)) & any(sapply(x, is.factor)))
+  if (!(is.null(handle_category)) & (any(sapply(x, is.factor)) | any(sapply(x, is.character))))
     x <- .handle_category(x, handle_category)
   
   x <- as.matrix(x)

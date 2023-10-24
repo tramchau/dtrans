@@ -82,24 +82,9 @@ summary.transformer <- function(object, ...)
 transform.transformer <- function(object, newdata)
 {
   .validate_object(object)
-
-  if (missing(newdata)) {
-    stop("'newdata' should be specified to call this function.")
-  }
-  if (nrow(newdata) == 0) {
-    stop("'newdata' should contain data")
-  }
-  if(length(dim(newdata)) != 2L)
-    stop("'newdata' should be a matrix or data frame")
-
-  if(ncol(newdata) != ncol(object$fit_data)) {
-    cn <- colnames(object$fit_data)
-    stop("'newdata' does not have the same columns with the object's fit data. The columns should be ", c(paste0(cn[-length(cn)], ", "), cn[length(cn)]))
-  }
-  # check for pca and nmf
+  .validate_newdata(object, newdata)
+  
   nm <- colnames(object$fit_data)
-  if(!all(nm %in% colnames(newdata)))
-    stop("'newdata' does not have named columns matching the fit data's. The columns should be ", colnames(object$fit_data))
   newdata <- newdata[, nm, drop = FALSE]
 
   x <- scale(newdata, center = object$center, scale = object$scale)
@@ -131,13 +116,6 @@ transform.transformer <- function(object, newdata)
   }
 }
 
-#' @export
-inverse <- function(object, ...) UseMethod("inverse")
-
-inverse.default <- function(object, data, ...) {
-  inverse.transformer(object, data, ...)
-}
-
 #' Function inversing the tranformed data back to the original data.
 #'
 #' This function inverses the transformed data back to the original data based on the transformer object's attributes.
@@ -148,7 +126,6 @@ inverse.default <- function(object, data, ...) {
 #' This function inverses the transformed data back to the original if using all set components. The inverse can happen partly for specific component to analyse the effect of components.
 #'
 #' @return a dataset after inversing.
-#'
 #' @export
 #' @examples
 #' data(iris)
@@ -156,6 +133,18 @@ inverse.default <- function(object, data, ...) {
 #' x_trans <- transformer.kpca(iris[1:10,1:4])
 #' inverse(x_trans, x_trans$x)
 #'
+inverse <- function(object, ...) UseMethod("inverse")
+
+#' @describeIn inverse Default for inverse function.
+#' @export
+inverse.default <- function(object, data, ...) {
+  .validate_object(object)
+  inverse.transformer(object, data, ...)
+}
+
+
+#' @describeIn inverse Inverse function for transformer object.
+#' @export
 inverse.transformer <- function(object, data, ...) {
 
   .validate_object(object)
@@ -183,57 +172,46 @@ inverse.transformer <- function(object, data, ...) {
 #'
 #' This function plots the transformed data.
 #' @param object transformer object.
-#' @param point_label optional label for each data point, default is NULL, all data points are plotted in black. If labels is set, the data points' colors are encoded accordingly.
+#' @param new_data new data having the same features to the data creating the transformer object. If new_data is NULL, the fitted data of the object is plot. If new_data is a dataset, this dataset will be transformed by the object and plotted.
+#' @param plot_all binary flag to plot all fitted data and transformed new_data if new_data is not NULL. If 'plot_all' is TRUE and the 'color' is set, 'color' should be set to the combination length accordingly.
+#' @param color optional colors for each data point, default is NULL, all data points are plotted in black. If labels is set, the data points' colors are encoded accordingly.
 #'
 #' @details
 #' This function
 #'
 #' @export
-plot.transformer <- function(object, point_label=NULL,...) {
+plot.transformer <- function(object, new_data=NULL, plot_all=FALSE,...) {
   .validate_object(object)
-  .plotting(object$x, label = point_label, title=object$technique)
+  if (!is.null(new_data)) {
+    trans_data <- transform(object, new_data)
+    if (plot_all) {
+      plot_data <- rbind(object$x, trans_data)
+      
+    } else plot_data <- trans_data
+  }
+  else plot_data <- object$x
+  
+  .plotting(plot_data,...)
 }
 
-#' @export
-plottrans <- function(object, ...) UseMethod("plottrans")
-
-#' Function transforming and plotting the transformed data.
-#'
-#' This function transforms data and plots the transformed data.
-#' @param object transformer object.
-#' @param new_data new data having the same features to the data instantiate the transformer object.
-#' @param point_label label for each data point, default is NULL, all data points are plotted in black. If labels is setted, the data points' color is encoded accordingly.
-#'
-#' @details
-#' This function
-#'
-#' @export
-plottrans.transformer <- function(object, new_data, point_label=NULL,...) {
-
-  .validate_object(object)
-  trans_data <- transform(object, new_data)
-  .plotting(trans_data, label = point_label, title=object$technique)
-
-}
-
-.plotting <- function(data, label=NULL, title_=NULL, ...) {
-  if (is.null(label)) {
-    c <- 'black'
-  } else c <- label
+.plotting <- function(data, ...) {
   n_comp <- ncol(data)
   if (n_comp == 1) {
     plot(data, ylab= "Component 1", ...)
   } else if (n_comp == 2) {
     plot(data[,1], data[,2],
-         xlab="Component 1", ylab="Component 2", col=c, ...)
+         xlab="Component 1", ylab="Component 2", ...)
   } else {
     pairs(data)
   }
-  title(main=title_)
+  # title(main=title_)
 }
 
 .handle_category <- function(x, handle_category) {
   # handle categorical variable
+  x[sapply(x, is.character)] <- lapply(x[sapply(x, is.character)], 
+                                       as.factor)
+  
   x_cate <- x[sapply(x, is.factor)]
   colnms <- names(x_cate)
   
@@ -244,6 +222,7 @@ plottrans.transformer <- function(object, new_data, point_label=NULL,...) {
     }
   } else if (handle_category == "onehot") {
     x_noncate <- x[!sapply(x, is.factor)]
+    x_noncate <- x_noncate[!sapply(x_noncate, is.character)]
     
     for (colnm in colnms) {
       # one hot encoding
@@ -254,6 +233,8 @@ plottrans.transformer <- function(object, new_data, point_label=NULL,...) {
     x <- x_noncate
   } else if (handle_category == "ignore") {
     x <- x[!sapply(x, is.factor)]
+    x <- x[!sapply(x, is.character)]
+    
   }
   return(x)
 }

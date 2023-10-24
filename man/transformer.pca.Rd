@@ -19,7 +19,7 @@ transformer.pca(
 
 \item{scaling}{boolean value to scale data. Parameter is passed to base::scale.}
 
-\item{handle_category}{character value to handle discrete features in data either by 'label' or 'onehot'.}
+\item{handle_category}{character value to handle categorical features. The accepted values are 'label', 'onehot', and 'ignore'. Default value is NULL, if dataset contains character fields, the function return error. .}
 }
 \value{
 transformer.pca return a class "transformer" containing the following components:

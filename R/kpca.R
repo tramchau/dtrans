@@ -4,9 +4,9 @@
 #' @param components positive number of components for the transformed data.
 #' @param center boolean value to scale data. Parameter is passed to base::scale.
 #' @param scaling boolean value to scale data. Parameter is passed to base::scale.
-#' @param handle_category character value to handle discrete features in data either by 'label' or 'onehot'.
+#' @param handle_category character value to handle categorical features. The accepted values are 'label', 'onehot', and 'ignore'. Default value is NULL, if dataset contains character fields, the function return error. .
 #' @param kernel string to indicate the kernel name. Currently, 'rbfdot' is allowed.
-#' @param sigma numeric value to indicate the inverse kernel width for the Radial Basis kernel function "rbfdot".
+#' @param sigma numeric value to indicate the inverse kernel width for the Radial Basis kernel function "rbfdot". The smaller of sigma, the more non-linear of the decision boundary.
 #'
 #' @details
 #' This calculation is created based on stat::prcomp function with some adjustments to fit into the purpose of the package. It creates a transformer object including several attribute to perform other functionality.
@@ -23,7 +23,7 @@ transformer.kpca <- function(x, components = 2, center = FALSE, scaling = FALSE,
   # Validate input
   .validate_input(x, components, center, scaling, handle_category)
   
-  if (!(is.null(handle_category)) & any(sapply(x, is.factor)))
+  if (!(is.null(handle_category)) & (any(sapply(x, is.factor)) | any(sapply(x, is.character))))
     x <- .handle_category(x, handle_category)
   
   # Validate other extra input
@@ -61,6 +61,7 @@ transformer.kpca <- function(x, components = 2, center = FALSE, scaling = FALSE,
             components = components,
             center = cen, # %||% FALSE,
             scale  = sc, #  %||% FALSE)
+            handle_category = handle_category,
             technique = "kpca",
             fit_data = x,
             others=list(sigma = sigma,
