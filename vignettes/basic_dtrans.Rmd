@@ -1,0 +1,200 @@
+---
+title: "'dtrans' Package - Basic"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{my-vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.height = 4, fig.width = 7.5, fig.align = "center"
+)
+```
+
+```{r setup}
+library(dtrans)
+```
+
+This package supports transform data by different algorithms including Principle Component Analysis - PCA, Non-negative matrix Factorization - NMF, and Kernel PCA - KPCA. The idea is that the high dimensionality dataset is transformed into a lower dimensionality to serve the visualization purpose or dimension reduction tasks.
+
+Firstly, the *iris* dataset is split into train and test, such the *transformer* object is created by train data. Then this transformer object is used to transform the test data.
+
+Three transformer objects are created based on train data using different technique: PCA, NMF, and KPCA.
+
+## Create *transformer* object
+
+```{r}
+data("iris")
+data <- iris[sample(1:nrow(iris)),]
+rownames(data) <- 1:nrow(data)
+idx_train <- 1:130
+idx_test <- 131:nrow(data)
+
+pca <- transformer.pca(data[idx_train,1:4])
+nmf <- transformer.nmf(data[idx_train,1:4])
+kpca <- transformer.kpca(data[idx_train,1:4])
+
+```
+
+The created objects are class *transformer* with attributes:
+
+```{r}
+attributes(pca)
+attributes(nmf)
+attributes(kpca)
+
+```
+
+**Attributes' description:**
+
+* x: transformed data
+* components: number of features after transforming
+* center: value used to decenter data before transforming
+* scale: value used to scale the data before transforming, default is std of original feature
+* handle_category: 
+* technique: indicate the algorithm used to create the object
+* fit_data: data used to create the transformer object (data is after being scaled)
+* others: attributes for each algorithms
+    * pca:
+        * sdev: the standard deviation of each feature of original data.
+        * coef: coefficient of original features to each fitted component.
+        * explained_var: the percentage of variance being explained by the each components.
+    * nmf:
+        * coef: coefficient (H) of original features to each fitted component.
+        * eucl_dist: eclidean distant between fitted data and the transformed data multiplied by coefficient H.
+        * relative_err: relateive error between fitted data and the transformed data multiplied by coefficient H.
+        * stop_iter: number of interations ran.
+    * kpca:
+        * sigma: the inverse kernel width for the Radial Basis kernel function "rbfdot".
+        * eigenvalues: eigenvalues of the kernel matrix for transformation.
+        * eigenvectors: eigenvectors of the kernel matrix for transformation.
+
+**There are other methods for the S3 class *transformer*.**
+
+## PCA
+
+PCA is the simplest and the most widely used for dimensionality reduction. It transforms data into anew coordinate system which captures the highest data variance called the first component and repeats that process for the following ordered components.
+
+* *print* function
+
+```{r}
+print(pca)
+```
+
+* *summary* function
+
+```{r}
+summary(pca)
+```
+
+* *plot* function
+
+```{r}
+par(mfrow=c(1, 2))
+plot(pca, main="PCA")
+plot(pca, col=data[idx_train,5], main="PCA - colored by Species")
+```
+
+If *new_data* parameter is not *NULL*, the function will transform new data and plot this new tranformed data. Default setting is plotting only the new transformed data. To plot both trained transformed data and new transformed data, set the option *plot_all=TRUE*.
+
+Other basic parameters for plot are supported, such as col, main, xlim, ylim...
+
+```{r}
+par(mfrow=c(1, 2))
+plot(pca, new_data=data[idx_test,1:4], col=data[idx_test,5], main="New transformed data")
+plot(pca, new_data=data[idx_test,1:4], col=data[,5], plot_all=TRUE, main="Both train transformed and \nnew transformed data")
+
+```
+
+* *transform* function: use created transformer object to transform new data. Function returns a dataset of components.
+
+```{r}
+t_pca <- transform(pca, data[idx_test,1:4])
+head(t_pca)
+```
+
+* *inverse* function: undo transformation of transformed data. Function returns a dataset with same columns of before transforming. The values are slightly off due to the information loss during transforming. Thus, this technique is useful in removing noise from data.
+
+```{r}
+head(inverse(pca, t_pca))
+
+# Original data to compare with the inverse output
+head(data[idx_test,1:4])
+```
+
+**The below sections are demonstrations for NMF and KPCA with the same functions as for PCA part. As they all create** ***transformer*** **object, thus the S3 methods are applied for all techniques similarly**
+
+## NMF
+
+NMF - Non-negative matrix factorization - is applied for non-negative data. This is useful for data including several independent sources, such as audio music with multiple instruments. It excludes the cancellation effects as data is constraint of non-negative.
+
+```{r}
+par(mfrow=c(1, 2))
+plot(nmf, main="NMF")
+plot(nmf, col=data[idx_train,5], main="NMF - colored by Species")
+```
+
+```{r}
+# Transform test data
+t_nmf <- transform(nmf, data[idx_test,1:4])
+head(t_nmf)
+```
+
+```{r}
+# transform and plot data
+par(mfrow=c(1, 2))
+plot(nmf, new_data=data[idx_test,1:4], col=data[idx_test,5], main="New transformed data")
+plot(nmf, new_data=data[idx_test,1:4], col=data[,5], plot_all=TRUE, main="Both train transformed and \nnew transformed data")
+
+```
+
+```{r}
+head(inverse(nmf, t_nmf))
+
+# Original data to compare with the inverse output
+head(data[idx_test,1:4])
+```
+
+## KPCA
+
+KPCA allows for nonlinear dimensionality reduction by using kernel trick - projecting the non-linear-separated data into the linearly separated one
+
+```{r}
+par(mfrow=c(1, 2))
+plot(kpca, main="KPCA")
+plot(kpca, col=data[idx_train,5], main="KPCA - colored by Species")
+
+```
+
+```{r}
+# Transform test data
+t_kpca <- transform(kpca, data[idx_test,1:4])
+head(t_kpca)
+```
+
+```{r}
+# transform and plot data
+par(mfrow=c(1, 2))
+plot(kpca, new_data=data[idx_test,1:4], col=data[idx_test,5], main="New transformed data")
+plot(kpca, new_data=data[idx_test,1:4], col=data[,5], plot_all=TRUE, main="Both train transformed and \nnew transformed data")
+```
+
+```{r}
+# Inverse test transformed data
+head(inverse(kpca, t_kpca))
+head(data[idx_test,1:4])
+
+# Inverse train transformed data
+head(inverse(kpca, kpca$x[idx_train,]))
+head(data[idx_train,1:4])
+```
+
+
+
+

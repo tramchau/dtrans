@@ -9,7 +9,7 @@ transformer.nmf(
   components = 2,
   center = FALSE,
   scaling = FALSE,
-  handle_discrete = FALSE,
+  handle_category = NULL,
   max_iter = 1000
 )
 }
@@ -20,7 +20,7 @@ transformer.nmf(
 
 \item{scaling}{boolean value or a numeric vector corresponding to dataset's columns. Parameter is passed to base::scale.}
 
-\item{handle_discrete}{boolean value to handle discrete features in data.}
+\item{handle_category}{character value to handle discrete features in data either by 'label' or 'onehot'.}
 
 \item{max_iter}{positive number to limit the iteration, default is 1000.}
 }

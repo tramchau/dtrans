@@ -13,3 +13,4 @@ report/*.PNG
 report/*.csl
 report/*.bib
 report/*.
+inst/doc

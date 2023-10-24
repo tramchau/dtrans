@@ -4,7 +4,7 @@
 #' @param components positive number of components for the transformed data.
 #' @param center boolean value to scale data. Parameter is passed to base::scale.
 #' @param scaling boolean value to scale data. Parameter is passed to base::scale.
-#' @param handle_discrete boolean value to handle discrete features in data.
+#' @param handle_category character value to handle discrete features in data either by 'label' or 'onehot'.
 #' @param kernel string to indicate the kernel name. Currently, 'rbfdot' is allowed.
 #' @param sigma numeric value to indicate the inverse kernel width for the Radial Basis kernel function "rbfdot".
 #'
@@ -19,10 +19,13 @@
 #' x_trans <- transformer.kpca(iris[,1:4])
 #'
 
-transformer.kpca <- function(x, components = 2, center = FALSE, scaling = FALSE, handle_discrete = FALSE, kernel = "rbfdot", sigma = 0.1){
+transformer.kpca <- function(x, components = 2, center = FALSE, scaling = FALSE, handle_category = NULL, kernel = "rbfdot", sigma = 0.1){
   # Validate input
-  .validate_instantiate_input(x, components, center, scaling, handle_discrete)
-
+  .validate_input(x, components, center, scaling, handle_category)
+  
+  if (!(is.null(handle_category)) & any(sapply(x, is.factor)))
+    x <- .handle_category(x, handle_category)
+  
   # Validate other extra input
 
   if (is.null(kernel)) stop("kernel should be set as 'rbfdot'.")

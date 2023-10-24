@@ -4,22 +4,25 @@
 #' @param components positive number of components for the transformed data.
 #' @param center boolean value to scale data. Parameter is passed to base::scale.
 #' @param scaling boolean value to scale data. Parameter is passed to base::scale.
-#' @param handle_discrete boolean value to handle discrete features in data.
+#' @param handle_category character value to handle discrete features in data either by 'label' or 'onehot'.
 #'
 #' @details
 #' This calculation is created based on stat::prcomp function with some adjustments to fit into the purpose of the package. It creates a transformer object including several attribute to perform other functionality.
 #'
-#' @return transformer.pca return a class "transformer" containing the following componenets:
+#' @return transformer.pca return a class "transformer" containing the following components:
 #'
 #' @export
 #' @examples
 #' data(iris)
 #' x_trans <- transformer.pca(iris[,1:4])
 
-transformer.pca <- function(x, components = 2, center = FALSE, scaling = FALSE, handle_discrete = FALSE) {
+transformer.pca <- function(x, components = 2, center = FALSE, scaling = FALSE, handle_category = NULL) {
   # Validate input
-  .validate_instantiate_input(x, components, center, scaling, handle_discrete)
-
+  .validate_input(x, components, center, scaling, handle_category)
+  
+  if (!(is.null(handle_category)) & any(sapply(x, is.factor)))
+    x <- .handle_category(x, handle_category)
+  
   x <- as.matrix(x)
   x <- scale(x, center = center, scale = scaling)
   cen <- attr(x, "scaled:center")
@@ -40,6 +43,7 @@ transformer.pca <- function(x, components = 2, center = FALSE, scaling = FALSE, 
             components = components,
             center = cen,
             scale  = sc,
+            handle_category = handle_category,
             technique = "pca",
             fit_data = x,
             others = list(coef = s$v,

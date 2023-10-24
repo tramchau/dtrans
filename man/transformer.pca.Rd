@@ -9,7 +9,7 @@ transformer.pca(
   components = 2,
   center = FALSE,
   scaling = FALSE,
-  handle_discrete = FALSE
+  handle_category = NULL
 )
 }
 \arguments{
@@ -19,10 +19,10 @@ transformer.pca(
 
 \item{scaling}{boolean value to scale data. Parameter is passed to base::scale.}
 
-\item{handle_discrete}{boolean value to handle discrete features in data.}
+\item{handle_category}{character value to handle discrete features in data either by 'label' or 'onehot'.}
 }
 \value{
-transformer.pca return a class "transformer" containing the following componenets:
+transformer.pca return a class "transformer" containing the following components:
 }
 \description{
 This function return a transformer object fitted by data.

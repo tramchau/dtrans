@@ -4,7 +4,7 @@
 #' @param components whole number greater than 0 set the target reduced dimensions for the transformed data, default is 2.
 #' @param center boolean value or a numeric vector corresponding to dataset's columns. Parameter is passed to base::scale.
 #' @param scaling boolean value or a numeric vector corresponding to dataset's columns. Parameter is passed to base::scale.
-#' @param handle_discrete boolean value to handle discrete features in data.
+#' @param handle_category character value to handle discrete features in data either by 'label' or 'onehot'.
 #' @param max_iter positive number to limit the iteration, default is 1000.
 #'
 #' @details
@@ -21,14 +21,17 @@
 #' x_trans <- transformer.nmf(iris[,1:4])
 #'
 
-transformer.nmf <- function (x, components=2, center = FALSE, scaling = FALSE, handle_discrete = FALSE, max_iter = 1000) {
+transformer.nmf <- function (x, components=2, center = FALSE, scaling = FALSE, handle_category = NULL, max_iter = 1000) {
   # Validate input
-  .validate_instantiate_input(x, components, center, scaling, handle_discrete)
-
+  .validate_input(x, components, center, scaling, handle_category)
+  
+  if (!(is.null(handle_category)) & any(sapply(x, is.factor)))
+    x <- .handle_category(x, handle_category)
+  
   # extra input for nmf
   if (!is.numeric(max_iter) | length(max_iter) > 1 | ceiling(max_iter) != max_iter)
     stop("max_iter should be a positive interger number.")
-
+  xorig <- x
   x <- as.matrix(x)
 
   if (any(x<0)) stop("Negative value in x")
@@ -68,15 +71,15 @@ transformer.nmf <- function (x, components=2, center = FALSE, scaling = FALSE, h
                             relative_err=ret$relative_err,
                             stop_iter=ret$stop_iter)
               )
-              #handle_discrete = handle_discrete)
+              #handle_category = handle_category)
   )
   class(z) <- "transformer"
   z
 }
 
-transformer.nmf.perf <- function (x, components=2, center = FALSE, scaling = FALSE, handle_discrete = FALSE, max_iter = 1000, W, H, type='baser') {
+transformer.nmf.perf <- function (x, components=2, center = FALSE, scaling = FALSE, handle_category = NULL, max_iter = 1000, W, H, type='baser') {
   # Validate input
-  .validate_instantiate_input(x, components, center, scaling, handle_discrete)
+  .validate_input(x, components, center, scaling, handle_category)
   
   # extra input for nmf
   if (!is.numeric(max_iter) | length(max_iter) > 1 | ceiling(max_iter) != max_iter)
@@ -122,7 +125,7 @@ transformer.nmf.perf <- function (x, components=2, center = FALSE, scaling = FAL
                             relative_err=ret$relative_err,
                             stop_iter=ret$stop_iter)
   )
-  #handle_discrete = handle_discrete)
+  #handle_category = handle_category)
   )
   class(z) <- "transformer"
   z

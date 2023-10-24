@@ -1,0 +1,79 @@
+---
+title: "KPCA Demonstration on Synthetic Data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{kpca_synthesis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.height = 5, fig.width = 7, fig.align = "center"
+)
+```
+
+```{r setup}
+library(dtrans)
+```
+
+Two-dimentional data is generated of being non-linearly separated.
+
+```{r gen_synthesis_data, echo=FALSE}
+set.seed(1L)
+n <- 100L
+theta <- runif(n, 0, 2 * pi)
+r <- rlnorm(n, meanlog = log(6), sdlog = 0.1)
+df1 <- data.frame(x=r * cos(theta), y=r * sin(theta))
+
+set.seed(1L)
+n <- 100L
+theta <- runif(n, 0, 2 * pi)
+r <- rlnorm(n, meanlog = log(2), sdlog = 0.1)
+# plot(r * cos(theta), r * sin(theta), asp = 1)
+df2 <- data.frame(x=r * cos(theta), y=r * sin(theta))
+df <- rbind(df1,df2)
+df$y <- df$y+abs(min(df$y))
+df$x <- df$x+abs(min(df$x))
+
+df <- df[sample(1:nrow(df)),]
+rownames(df) <- 1:nrow(df)
+
+plot(df)
+```
+
+Three *transformer* objects are created to reduce 2D data into 1D by PCA, NMF, and KPCA. There are no clear separation with PCA and NMF, while KPCA provides a clear distinction of two possible groups. So, we will groups point based on the condition on Component 1 value of greater versus smaller than zero.
+
+```{r, fig.height = 3}
+pca <- transformer.pca(df, components = 1)
+nmf <- transformer.nmf(df, components = 1)
+kpca <- transformer.kpca(df, components = 1)
+
+par(mfrow=c(1, 3))
+plot(pca, main="PCA")
+plot(nmf, main="NMF")
+plot(kpca, main="KPCA")
+```
+
+Then, we plot the 3 *transformer* object above and color the by the groups created.
+
+```{r, fig.height = 3}
+grp1_idx <- which(kpca$x[,'PC1'] > 0)
+grp2_idx <- which(kpca$x[,'PC1'] < 0)
+
+df['color'] <- "black"
+df[grp2_idx, 'color'] <- "red"
+par(mfrow=c(1, 3))
+plot(pca, color=df$color, main="PCA")
+plot(nmf, color=df$color, main="NMF")
+plot(kpca, color=df$color, main="KPCA")
+
+```
+
+The coloring by groups is assigned to original data. The two groups shows a good separation by two donut-shape clusters.
+
+```{r}
+plot(df[,1:2], col=df$color)
+```

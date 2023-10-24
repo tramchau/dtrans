@@ -9,7 +9,7 @@ transformer.kpca(
   components = 2,
   center = FALSE,
   scaling = FALSE,
-  handle_discrete = FALSE,
+  handle_category = NULL,
   kernel = "rbfdot",
   sigma = 0.1
 )
@@ -21,7 +21,7 @@ transformer.kpca(
 
 \item{scaling}{boolean value to scale data. Parameter is passed to base::scale.}
 
-\item{handle_discrete}{boolean value to handle discrete features in data.}
+\item{handle_category}{character value to handle discrete features in data either by 'label' or 'onehot'.}
 
 \item{kernel}{string to indicate the kernel name. Currently, 'rbfdot' is allowed.}
 

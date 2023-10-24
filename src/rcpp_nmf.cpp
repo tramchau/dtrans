@@ -25,7 +25,7 @@ List rcpp_optimize_WH(arma::mat x, arma::mat W, arma::mat H, bool update_H, int 
       
     errorx = mean(mean(abs(x - (W * H))))/mean(mean(x));
     if (errorx < 1e-05) {
-      Rprintf("Execution finishes at iteration = $d...", iter);
+      //("Execution finishes at iteration = $d...", iter);
       iter_final = iter;
       break;
     }
