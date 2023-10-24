@@ -1,0 +1,277 @@
+---
+title: "morefunc"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{morefunc}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.height = 4, fig.width = 8, fig.align = "center"
+)
+```
+
+```{r setup}
+library(dtrans)
+```
+
+Load *iris* for demonstration.
+
+```{r}
+data("iris")
+data <- iris
+```
+
+## Handle_category parameter demonstration
+
+Categorical columns in dataset can be handled by the creator functions. Default *handle_category* is *NULL* indicating of not handling categorical columns, it will return error if the dataset includes categorical columns. Otherwise, there are 3 options for categorical handling:
+
+* **ignore**: to exclude categorical columns from fitting.
+* **label**: to process categorical columns by label encoding, values (string) in each categorical column are mapped to numeric values, one categorical column is converted to one numeric column. The mapping value ordered can be controled by defining the factor's levels.
+* **onehot**: to process categorical columns by one hot encoding. Each values (string) in each categorical column are converted to one numeric columns. If a categorical column has 4 distinct values, this column will be processed one-hot-encoding into 4 numeric columns. Each numeric column contains only either 0 or 1, indicating the value of the row at that categorical value.
+
+The fitted data can be view by accessing the object's attribute *fit_data*, this will show the data after processing for creating the *transformer* object.
+
+```{r}
+par(mfrow=c(1,3))
+pca <- transformer.pca(data, handle_category = 'ignore')
+plot(pca, col=data[,5], main="PCA\nhandle_category = 'ignore'")
+
+pca <- transformer.pca(data, handle_category = 'label')
+plot(pca, col=data[,5], main="PCA\nhandle_category = 'label'")
+
+pca <- transformer.pca(data, handle_category = 'onehot')
+plot(pca, col=data[,5], main="PCA\nhandle_category = 'onehot'")
+
+```
+
+```{r}
+par(mfrow=c(1,3))
+nmf <- transformer.nmf(data, handle_category = 'ignore')
+plot(nmf, col=data[,5], main="NMF\nhandle_category = 'ignore'")
+
+nmf <- transformer.nmf(data, handle_category = 'label')
+plot(nmf, col=data[,5], main="NMF\nhandle_category = 'label'")
+
+nmf <- transformer.nmf(data, handle_category = 'onehot')
+plot(nmf, col=data[,5], main="NMF\nhandle_category = 'onehot'")
+
+```
+```{r}
+par(mfrow=c(1,3))
+kpca <- transformer.kpca(data, handle_category = 'ignore')
+plot(kpca, col=data[,5], main="KPCA\nhandle_category = 'ignore'")
+
+kpcal <- transformer.kpca(data, handle_category = 'label')
+plot(kpcal, col=data[,5], main="KPCA\nhandle_category = 'label'")
+
+kpcao <- transformer.kpca(data, handle_category = 'onehot')
+plot(kpcao, col=data[,5], main="KPCA\nhandle_category = 'onehot'")
+
+```
+
+Access fit data:
+
+```{r}
+# handle_category = 'label'
+head(kpcal$fit_data)
+
+# handle_category = 'onehot'
+head(kpcao$fit_data)
+
+```
+
+## Center and Scaling parameter
+
+Data ta should be normalized before transforming because the columns have different value ranges, such as columns in different units. It is supported by two parameters *center* and *scaling*.  Below demonstrates the effects of different options for these 2 parameters setting.
+
+##### PCA
+
+```{r}
+par(mfrow=c(1,4))
+pca <- transformer.pca(data, handle_category = 'ignore')
+plot(pca, col=data[,5], main='PCA\ncenter=F, scaling=F')
+
+pca <- transformer.pca(data, center=T, handle_category = 'ignore')
+plot(pca, col=data[,5], main='PCA\ncenter=T, scaling=F')
+
+pca <- transformer.pca(data, center=T, scaling=T, handle_category = 'ignore')
+plot(pca, col=data[,5], main='PCA\ncenter=T, scaling=T')
+pca <- transformer.pca(data, center=F, scaling=T, handle_category = 'ignore')
+plot(pca, col=data[,5], main='PCA\ncenter=F, scaling=T')
+```
+
+##### NMF
+
+By its name, NMF (Non-negative matrix ...), the algorithm is only suitable for positive values. When we scale data by setting *center=TRUE*, this cause the negative values in the scaled dataset. Thus we should consider to apply the min-max scaling, by setting accordingly center and scale demonstrated below.
+
+```{r}
+par(mfrow=c(1,3))
+nmf <- transformer.nmf(data, handle_category = 'ignore')
+plot(nmf, col=data[,5], main='NMF\ncenter=F, scaling=F')
+
+nmf <- transformer.nmf(data, center=F, scaling=T, handle_category = 'ignore')
+plot(nmf, col=data[,5], main='NMF\ncenter=F, scaling=T')
+
+#min-max scheduling
+
+ce <- c(min(data[,1]), min(data[,2]), min(data[,3]), min(data[,4]))
+sc <- c(max(data[,1]) - min(data[,1]), max(data[,2]) - min(data[,2]), max(data[,3]) - min(data[,3]), max(data[,4]) - min(data[,4]))
+
+nmf <- transformer.nmf(data[,1:4], center=ce, scaling=sc, handle_category = 'ignore')
+plot(nmf, col=data[,5], main='NMF\nmin-max scaling')
+
+```
+
+##### KPCA
+
+```{r}
+
+par(mfrow=c(1,4))
+kpca <- transformer.kpca(data, handle_category = 'ignore')
+plot(kpca, col=data[,5], main='KPCA\ncenter=F, scaling=F')
+
+kpca <- transformer.kpca(data, center=T, handle_category = 'ignore')
+plot(kpca, col=data[,5], main='KPCA\ncenter=T, scaling=F')
+
+kpca <- transformer.kpca(data, center=T, scaling=T, handle_category = 'ignore')
+plot(kpca, col=data[,5], main='KPCA\ncenter=T, scaling=T')
+
+kpca <- transformer.kpca(data, center=F, scaling=T, handle_category = 'ignore')
+plot(kpca, col=data[,5], main='KPCA\ncenter=F, scaling=T')
+```
+
+## *transform* function scenario
+
+*transform* function projects new data into the vector space created when calling the creator functions. For Machine Learning model with preprocessing step with PCA, NMF or KPCA. The function is then useful in the the train-test split context, where the train set is used to create the transformer object. This object is later used to transform the test set to avoid the data leakage when evaluating the Machine Learning model.
+
+##### PCA
+
+```{r}
+# shuffle data
+data <- iris[sample(1:nrow(iris)),]
+rownames(data) <- 1:nrow(data)
+idx_train <- 1:130
+idx_test <- 131:nrow(data)
+
+```
+
+```{r}
+pca <- transformer.pca(data[,1:4])
+par (mfrow=c(1, 2))
+plot(pca, col=data[,5], main="PCA - No splitting", xlim=c(-12, -6), ylim=c(-3,3))
+
+pca_split <- transformer.pca(data[idx_train,1:4])
+plot(pca_split, data[idx_test,1:4], col=data[,5], plot_all=T,
+     main="PCA - Train-Test split", xlim=c(-12, -6), ylim=c(-3,3))
+
+plot(pca$x[idx_test,1], pca$x[idx_test,2], col=data[idx_test,5],
+     main="PCA - No splitting \nNew transformed data only", xlim=c(-12, -6), ylim=c(-3,3),
+     xlab="Component 1", ylab="Component2")
+
+plot(pca_split, data[idx_test,1:4], col=data[idx_test,5], plot_all=F,
+     main="PCA - Train-Test splitting \nNew transformed data only", xlim=c(-12, -6), ylim=c(-3,3))
+```
+
+##### KPCA
+
+```{r}
+
+kpca <- transformer.kpca(data[,1:4])
+par (mfrow=c(1, 2))
+plot(kpca, col=data[,5], main="KPCA - No splitting")
+     # , xlim=c(-12, -6), ylim=c(-3,3))
+
+kpca_split <- transformer.kpca(data[idx_train,1:4])
+plot(kpca_split, data[idx_test,1:4], col=data[,5], plot_all=T,
+     main="KPCA - Train-Test split") #, xlim=c(-12, -6), ylim=c(-3,3))
+
+plot(kpca$x[idx_test,1], kpca$x[idx_test,2], col=data[idx_test,5],
+     main="KPCA - No splitting \nNew transformed data only", #, xlim=c(-12, -6), ylim=c(-3,3),
+     xlab="Component 1", ylab="Component2")
+
+plot(kpca_split, data[idx_test,1:4], col=data[idx_test,5], plot_all=F,
+     main="KPCA - Train-Test splitting \nNew transformed data only") #, xlim=c(-12, -6), ylim=c(-3,3))
+```
+
+## Inverse
+
+Inverse the transformed data will leave out the unexplainable portion from the original data. This can be applied for noise removal. 
+
+##### PCA
+
+Transformed data is reversed to the original data point, however, there are difference between the true original data versus the reversed data. These difference are possibly noise from data. When we plotting the reversed data, there are clearer separations between species in each pair of original features.
+
+```{r}
+par(mfrow=c(1,2))
+pca <- transformer.pca(data, handle_category = 'ignore')
+inv_data <- inverse(pca, pca$x)
+
+pairs(data[,1:4], main="Original data")
+pairs(inv_data, main="PCA - Inversed data")
+pairs(inv_data, main="PCA - Inversed data with Species", col=data[,5])
+```
+
+##### NMF
+
+Provide quite similar result, with the more separated groups of Species after removed noise data from inversed data.
+
+```{r}
+par(mfrow=c(1,2))
+nmf <- transformer.nmf(data, handle_category = 'ignore')
+inv_data <- inverse(nmf, nmf$x)
+
+pairs(data[,1:4], main="Original data")
+pairs(inv_data, main="NMF - Inversed data")
+pairs(inv_data, main="NMF - Inversed data with Species", col=data[,5])
+```
+
+
+
+## KPCA use case
+
+KPCA is applied for non-linear boundary in the data. The below demonstrate the possible boundary formed by KPCA. Comparing to PCA and NMF, KPCA provided a clear separation of 3 possible groups. 
+
+
+```{r}
+data(trees)
+
+head(trees)
+
+par(mfrow=c(1,3))
+pca <- transformer.pca(trees)
+nmf <- transformer.nmf(trees)
+kpca <- transformer.kpca(trees)
+par(mfrow=c(1, 3))
+plot(pca, main="PCA")
+plot(nmf, main="NMF")
+plot(kpca, main="KPCA")
+
+grp1_idx <- which(kpca$x[,'PC1'] > 2)
+grp2_idx <- which(kpca$x[,'PC2'] > 1.5)
+grp3_idx <- which(kpca$x[,'PC1'] < 1 & kpca$x[,'PC2'] < 1)
+
+```
+
+Then, if we base on the component 1 and 2 in KPCA to conditioning the groups of datapoint, we can view the their groups in the PCA and NMF, as well as for the original data. This is unsupervised clustering, these may be the meaningfull group and facilitate further analysis.
+
+```{r}
+par(mfrow=c(1, 3))
+
+trees['color'] <- "black"
+trees[grp2_idx, 'color'] <- "red"
+trees[grp3_idx, 'color'] <- "blue"
+plot(pca, col=trees$color, main="PCA")
+plot(nmf, col=trees$color, main="NMF")
+plot(kpca, col=trees$color, main="KPCA")
+
+
+pairs(trees[,1:3], col=trees$color)
+
+```
