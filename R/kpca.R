@@ -23,8 +23,11 @@ transformer.kpca <- function(x, components = 2, center = FALSE, scaling = FALSE,
   # Validate input
   .validate_input(x, components, center, scaling, handle_category)
   
-  if (!(is.null(handle_category)) & (any(sapply(x, is.factor)) | any(sapply(x, is.character))))
-    x <- .handle_category(x, handle_category)
+  if (!(is.null(handle_category))) {
+    if (any(sapply(x, is.factor)) | any(sapply(x, is.character)))
+      x <- .handle_category(x, handle_category)
+    else handle_category <- NULL
+  }
   
   # Validate other extra input
 

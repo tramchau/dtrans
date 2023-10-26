@@ -24,7 +24,7 @@ transformer.pca <- function(x, components = 2, center = FALSE, scaling = FALSE, 
   if (!(is.null(handle_category))) {
       if (any(sapply(x, is.factor)) | any(sapply(x, is.character)))
         x <- .handle_category(x, handle_category)
-      else handle_category <- 'NULL'
+      else handle_category <- NULL
   }
   
   x <- as.matrix(x)
