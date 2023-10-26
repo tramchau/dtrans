@@ -12,12 +12,20 @@
 \item{new_data}{new data having the same features to the data creating the transformer object. If new_data is NULL, the fitted data of the object is plot. If new_data is a dataset, this dataset will be transformed by the object and plotted.}
 
 \item{plot_all}{binary flag to plot all fitted data and transformed new_data if new_data is not NULL. If 'plot_all' is TRUE and the 'color' is set, 'color' should be set to the combination length accordingly.}
-
-\item{color}{optional colors for each data point, default is NULL, all data points are plotted in black. If labels is set, the data points' colors are encoded accordingly.}
 }
 \description{
 This function plots the transformed data.
 }
 \details{
-This function
+This function plots the transformed data of the transformer object. The optional new_data parameter is NULL as default, otherwise, it should be the data to be transformed by the existing transformer object. Then, all the new transformed data and the object transformed data are plotted if plot_all is set to TRUE
+}
+\examples{
+data(iris)
+data <- iris[sample(1:nrow(iris)),]
+idx_train <- 1:140
+idx_test <- 141:nrow(data)
+pca <- transformer.pca(iris[idx_train,1:4])
+plot(pca)
+# plot transform
+plot(pca, iris[idx_test,1:4])
 }

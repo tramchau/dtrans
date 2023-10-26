@@ -1,4 +1,4 @@
-#' Function printing the output of the transformer object
+#' Print function for transformer object
 #'
 #' @export
 print.transformer <- function(object, ...) {
@@ -34,10 +34,10 @@ print.transformer <- function(object, ...) {
   cat("...")
 }
 
-#' Function printing the summary of intermediate algorithm output of the transformer object
+#' Summarizing transformer object
 #'
 #' @export
-summary.transformer <- function(object, ...)
+summary.transformer <- function(object)
 {
   .validate_object(object)
 
@@ -58,9 +58,9 @@ summary.transformer <- function(object, ...)
   object
 }
 
-#' Function transforming new data by the existing transformer object.
+#' Function transforming data by transformer object.
 #'
-#' This function return transformed data for new data.
+#' This function transforms new data by the existing object.
 #' @param object transformer object.
 #' @param new_data new data having the same features to the data instantiate the transformer object.
 #'
@@ -75,13 +75,22 @@ summary.transformer <- function(object, ...)
 #' data <- iris[sample(1:nrow(iris)),]
 #' idx_train <- 1:140
 #' idx_test <- 141:nrow(data)
-#' x_trans <- transformer.kpca(iris[idx_train,1:4])
-#' transform(x_trans, iris[idx_test,1:4])
-#'
+#' pca <- transformer.pca(iris[idx_train,1:4])
+#' test_transformed <- transform(pca, iris[idx_test,1:4])
+#' head(test_transformed)
+#' 
 #' @method transform transformer
 transform.transformer <- function(object, newdata)
 {
   .validate_object(object)
+  
+  
+  if (!is.null(pca$handle_category)) {
+    if (object$handle_category != "ignore")
+      stop("transform function has not supported for object with categorical handling of label and onehot encoding")
+    else newdata <- .handle_category(newdata, object$handle_category)
+  }
+
   .validate_newdata(object, newdata)
   
   nm <- colnames(object$fit_data)
@@ -120,24 +129,24 @@ transform.transformer <- function(object, newdata)
 #'
 #' This function inverses the transformed data back to the original data based on the transformer object's attributes.
 #' @param object transformer object.
-#' @param data dataframe being inversed.
+#' @param data dataset being inversed.
 #'
 #' @details
-#' This function inverses the transformed data back to the original if using all set components. The inverse can happen partly for specific component to analyse the effect of components.
+#' This function inverses the transformed data back to the original.
 #'
 #' @return a dataset after inversing.
 #' @export
 #' @examples
 #' data(iris)
-#' iris[1:10,1:4]
-#' x_trans <- transformer.kpca(iris[1:10,1:4])
-#' inverse(x_trans, x_trans$x)
-#'
+#' pca <- transformer.pca(iris[,1:4])
+#' inv_data <- inverse(pca, x_trans$x)
+#' head(inv_data)
+#' 
 inverse <- function(object, ...) UseMethod("inverse")
 
 #' @describeIn inverse Default for inverse function.
 #' @export
-inverse.default <- function(object, data, ...) {
+inverse.default <- function(object, data) {
   .validate_object(object)
   inverse.transformer(object, data, ...)
 }
@@ -145,9 +154,16 @@ inverse.default <- function(object, data, ...) {
 
 #' @describeIn inverse Inverse function for transformer object.
 #' @export
-inverse.transformer <- function(object, data, ...) {
+inverse.transformer <- function(object, data) {
 
   .validate_object(object)
+  
+  if (!is.null(pca$handle_category))
+    if (object$handle_category != "ignore")
+      stop("inverse function has not supported for object with categorical handling of label and onehot encoding")
+  
+  .validate_inversedata(object, data)
+  data <- as.matrix(data)
   # pca
   if (object$technique == "pca" | object$technique == "nmf") {
     data_coef <- (data %*% t(object$others$coef))
@@ -174,13 +190,25 @@ inverse.transformer <- function(object, data, ...) {
 #' @param object transformer object.
 #' @param new_data new data having the same features to the data creating the transformer object. If new_data is NULL, the fitted data of the object is plot. If new_data is a dataset, this dataset will be transformed by the object and plotted.
 #' @param plot_all binary flag to plot all fitted data and transformed new_data if new_data is not NULL. If 'plot_all' is TRUE and the 'color' is set, 'color' should be set to the combination length accordingly.
-#' @param color optional colors for each data point, default is NULL, all data points are plotted in black. If labels is set, the data points' colors are encoded accordingly.
 #'
 #' @details
-#' This function
+#' This function plots the transformed data of the transformer object. The optional new_data parameter is NULL as default, otherwise, it should be the data to be transformed by the existing transformer object. Then, all the new transformed data and the object transformed data are plotted if plot_all is set to TRUE
 #'
 #' @export
+#' @examples
+#' data(iris)
+#' data <- iris[sample(1:nrow(iris)),]
+#' idx_train <- 1:140
+#' idx_test <- 141:nrow(data)
+#' pca <- transformer.pca(iris[idx_train,1:4])
+#' plot(pca)
+#' # plot transform
+#' plot(pca, iris[idx_test,1:4])
+
 plot.transformer <- function(object, new_data=NULL, plot_all=FALSE,...) {
+  if (!(is.logical(plot_all)) | is.null(plot_all)) stop("plot_all parameter should be single logical value")
+  if (length(plot_all) > 1) stop("plot_all parameter should be single logical value")
+  
   .validate_object(object)
   if (!is.null(new_data)) {
     trans_data <- transform(object, new_data)
@@ -232,6 +260,7 @@ plot.transformer <- function(object, new_data=NULL, plot_all=FALSE,...) {
     }
     x <- x_noncate
   } else if (handle_category == "ignore") {
+    # print("ignore")
     x <- x[!sapply(x, is.factor)]
     x <- x[!sapply(x, is.character)]
     

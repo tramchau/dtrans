@@ -8,14 +8,14 @@
 \usage{
 inverse(object, ...)
 
-\method{inverse}{default}(object, data, ...)
+\method{inverse}{default}(object, data)
 
-\method{inverse}{transformer}(object, data, ...)
+\method{inverse}{transformer}(object, data)
 }
 \arguments{
 \item{object}{transformer object.}
 
-\item{data}{dataframe being inversed.}
+\item{data}{dataset being inversed.}
 }
 \value{
 a dataset after inversing.
@@ -24,7 +24,7 @@ a dataset after inversing.
 This function inverses the transformed data back to the original data based on the transformer object's attributes.
 }
 \details{
-This function inverses the transformed data back to the original if using all set components. The inverse can happen partly for specific component to analyse the effect of components.
+This function inverses the transformed data back to the original.
 }
 \section{Methods (by class)}{
 \itemize{
@@ -35,8 +35,8 @@ This function inverses the transformed data back to the original if using all se
 }}
 \examples{
 data(iris)
-iris[1:10,1:4]
-x_trans <- transformer.kpca(iris[1:10,1:4])
-inverse(x_trans, x_trans$x)
+pca <- transformer.pca(iris[,1:4])
+inv_data <- inverse(pca, x_trans$x)
+head(inv_data)
 
 }

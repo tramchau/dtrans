@@ -2,7 +2,7 @@
 % Please edit documentation in R/transformer.R
 \name{transform.transformer}
 \alias{transform.transformer}
-\title{Function transforming new data by the existing transformer object.}
+\title{Function transforming data by transformer object.}
 \usage{
 \method{transform}{transformer}(object, newdata)
 }
@@ -15,7 +15,7 @@
 a dataset of transformed data.
 }
 \description{
-This function return transformed data for new data.
+This function transforms new data by the existing object.
 }
 \details{
 This applies the transformer object metadata to transform new data.
@@ -25,7 +25,8 @@ data(iris)
 data <- iris[sample(1:nrow(iris)),]
 idx_train <- 1:140
 idx_test <- 141:nrow(data)
-x_trans <- transformer.kpca(iris[idx_train,1:4])
-transform(x_trans, iris[idx_test,1:4])
+pca <- transformer.pca(iris[idx_train,1:4])
+test_transformed <- transform(pca, iris[idx_test,1:4])
+head(test_transformed)
 
 }

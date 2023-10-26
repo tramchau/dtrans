@@ -2,10 +2,10 @@
 % Please edit documentation in R/transformer.R
 \name{summary.transformer}
 \alias{summary.transformer}
-\title{Function printing the summary of intermediate algorithm output of the transformer object}
+\title{Summarizing transformer object}
 \usage{
-\method{summary}{transformer}(object, ...)
+\method{summary}{transformer}(object)
 }
 \description{
-Function printing the summary of intermediate algorithm output of the transformer object
+Summarizing transformer object
 }

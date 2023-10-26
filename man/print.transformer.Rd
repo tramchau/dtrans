@@ -2,10 +2,10 @@
 % Please edit documentation in R/transformer.R
 \name{print.transformer}
 \alias{print.transformer}
-\title{Function printing the output of the transformer object}
+\title{Print function for transformer object}
 \usage{
 \method{print}{transformer}(object, ...)
 }
 \description{
-Function printing the output of the transformer object
+Print function for transformer object
 }

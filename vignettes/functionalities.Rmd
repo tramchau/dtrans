@@ -1,5 +1,5 @@
 ---
-title: "morefunc"
+title: "Functionality - *dtrans* Package"
 output:
   rmarkdown::html_vignette:
     toc: true
@@ -217,6 +217,20 @@ pairs(data[,1:4], main="Original data")
 pairs(inv_data, main="PCA - Inversed data")
 pairs(inv_data, main="PCA - Inversed data with Species", col=data[,5])
 ```
+
+##### Inverse with scale
+
+
+```{r}
+par(mfrow=c(1,2))
+pca <- transformer.pca(data, handle_category = 'ignore', center = T, scaling = T)
+inv_data <- inverse(pca, pca$x)
+
+pairs(data[,1:4], main="Original data")
+pairs(inv_data, main="PCA - Inversed data")
+pairs(inv_data, main="PCA - Inversed data with Species", col=data[,5])
+```
+
 
 ##### NMF
 

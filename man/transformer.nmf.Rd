@@ -16,28 +16,25 @@ transformer.nmf(
 \arguments{
 \item{components}{whole number greater than 0 set the target reduced dimensions for the transformed data, default is 2.}
 
-\item{center}{boolean value or a numeric vector corresponding to dataset's columns. Parameter is passed to base::scale.}
+\item{center}{logical value or a numeric vector corresponding to dataset's columns. Parameter is passed to base::scale.}
 
-\item{scaling}{boolean value or a numeric vector corresponding to dataset's columns. Parameter is passed to base::scale.}
+\item{scaling}{logical value or a numeric vector corresponding to dataset's columns. Parameter is passed to base::scale.}
 
 \item{handle_category}{character value to handle categorical features. The accepted values are 'label', 'onehot', and 'ignore'. Default value is NULL, if dataset contains character fields, the function return error. .}
 
 \item{max_iter}{positive number to limit the iteration, default is 1000.}
 }
 \value{
-trans_nmf return a list with class "transformer" containing the following components:
-\item{x}{transformed data.}
-\item{center}{value of center using for scaling data.}
-\item{scale}{value of scale using for scaling data.}
+Return "transformer" class.
 }
 \description{
 This function create a transformer object based on the dataset. There are the other settings to preprocessing this dataset before creating the object.
 }
 \details{
-This calculation is created based on NMFN::nnmf function (Lee et al. 2001 based on Euclidean distance). It creates a transformer object including the transformed data and other attributes of extra information regarding to the tranforming process by the algorithm.
+The function is created based on NMFN::nnmf function (Lee et al. 2001 based on Euclidean distance) with some adjustments to fit into the purpose of the package. It includes preprocessing data (scaling, categorical handling) before transforming data. It creates a transformer object with attributes to perform other functionalities.
 }
 \examples{
 data(iris)
-x_trans <- transformer.nmf(iris[,1:4])
-
+nmf <- transformer.nmf(iris[,1:4])
+print(nmf)
 }

@@ -57,11 +57,17 @@
   
   if (is.null(attributes(object)))
     stop("'transformer' object is coerced and does not have any attributes.")
-  
+
   obj_attr_list <- list("x", "components",
                         "center", "scale", "handle_category", "technique", "fit_data", "others")
-  if (!(all(attributes(object)$names %in% obj_attr_list)))
+  
+  if (is.null(attributes(object)$names))
     stop("'transformer' object is coerced and having invalid or missing attributes.")
+  
+  if (!(all(attributes(object)$names %in% obj_attr_list)) |
+      !(all(obj_attr_list %in% attributes(object)$names)))
+    stop("'transformer' object is coerced and having invalid or missing attributes.")
+  
   # check others atribute for each technique
   if (object$technique == 'pca') {
     others_attr_list <- list("coef", "sdev", "explained_var")
@@ -88,10 +94,22 @@
   
   if(ncol(newdata) != ncol(object$fit_data)) {
     cn <- colnames(object$fit_data)
-    stop("'newdata' does not have the same columns with the object's fit data. The columns should be ", c(paste0(cn[-length(cn)], ", "), cn[length(cn)]))
+    stop("'newdata' does not have the same columns with the object's fit data. Access fit_data attribute of the object to view the data structure.")
   }
   # check for pca and nmf
   nm <- colnames(object$fit_data)
   if(!all(nm %in% colnames(newdata)))
-    stop("'newdata' does not have named columns matching the fit data's. The columns should be ", colnames(object$fit_data))
+    stop("'newdata' does not have column names matching the fit data's. Access fit_data attribute of the object to view the data structure.")
+}
+
+
+.validate_inversedata <- function(object, inversedata){
+  
+  if (missing(inversedata)) stop("'data' should be specified to call this function.")
+  if(!(is.data.frame(inversedata) | is.matrix(inversedata))) stop("'data' should be a matrix or data frame")
+  if (nrow(inversedata) == 0) stop("'data' should contain data")
+  
+  if(ncol(inversedata) != object$components) {
+    stop("'data' does not have the same columns with the object's transformed data.")
+  }
 }

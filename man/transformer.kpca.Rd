@@ -17,27 +17,27 @@ transformer.kpca(
 \arguments{
 \item{components}{positive number of components for the transformed data.}
 
-\item{center}{boolean value to scale data. Parameter is passed to base::scale.}
+\item{center}{logical value to scale data. Parameter is passed to base::scale.}
 
-\item{scaling}{boolean value to scale data. Parameter is passed to base::scale.}
+\item{scaling}{logical value to scale data. Parameter is passed to base::scale.}
 
 \item{handle_category}{character value to handle categorical features. The accepted values are 'label', 'onehot', and 'ignore'. Default value is NULL, if dataset contains character fields, the function return error. .}
 
-\item{kernel}{string to indicate the kernel name. Currently, 'rbfdot' is allowed.}
+\item{kernel}{character value to indicate the kernel name. Currently, 'rbfdot' is allowed.}
 
 \item{sigma}{numeric value to indicate the inverse kernel width for the Radial Basis kernel function "rbfdot". The smaller of sigma, the more non-linear of the decision boundary.}
 }
 \value{
-transformer.pca return a class "transformer" containing the following componenets:
+Return "transformer" class.
 }
 \description{
 This function create a transformer object fitted by data.
 }
 \details{
-This calculation is created based on stat::prcomp function with some adjustments to fit into the purpose of the package. It creates a transformer object including several attribute to perform other functionality.
+The function is created based on skernlab::kpca function with some adjustments to fit into the purpose of the package. It includes preprocessing data (scaling, categorical handling) before transforming data. It creates a transformer object with attributes to perform other functionalities.
 }
 \examples{
 data(iris)
-x_trans <- transformer.kpca(iris[,1:4])
-
+kpca <- transformer.kpca(iris[,1:4])
+print(kpca)
 }

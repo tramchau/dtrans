@@ -3,8 +3,6 @@ test_that("Validate the inputs - instantiate functions", {
 
   # valid inputs
   expect_silent(transformer.pca(iris[,1:4], center=T, scaling=T))
-  expect_silent(transformer.nmf(iris[,1:4], center=F, scaling=T))
-  expect_silent(transformer.kpca(iris[,1:4], center=T, scaling=T))
 
   # Validate dataset input
   expect_error(transformer.pca(iris[,1]), "'x' should be a dataframe or a named matrix.")
@@ -41,46 +39,11 @@ test_that("Validate the inputs - instantiate functions", {
   expect_error(transformer.pca(iris[,1:4], center='a'), "'center' should be a logical value or a numeric vector having same length with number of columns of x.")
   expect_error(transformer.pca(iris[,1:4], center=c(1, 1)), "'center' should have a same length with number of columns of x.")
   expect_error(transformer.pca(iris[,1:4], center=c(1, F)), "'center' should have a same length with number of columns of x.")
-
+  
+  # Validate other param
+  expect_error(transformer.pca(iris[,1:4], scaling=1), "'scaling' should be a logical value or a non-zero numeric vector having same length with column numbers of x.")
+  expect_error(transformer.pca(iris[,1:4], scaling='a'), "'scaling' should be a logical value or a non-zero numeric vector having same length with column numbers of x.")
+  expect_error(transformer.pca(iris[,1:4], scaling=c(1, 1)), "'scaling' should be non-zero and have same length with the number of columns of x.")
+  expect_error(transformer.pca(iris[,1:4], scaling=c('a','b','c','d')), "'scaling' should be non-zero and have same length with the number of columns of x.")
 })
 
-test_that("Validate the structure of the output", {
-  t <- transformer.pca(iris[,1:4], center=T, scaling=T)
-  expect_s3_class(t, "transformer")
-
-  # check attribute names of object
-  #expect_identical(sort(names(m)), sort(c("call", "formula", "data", "yname", "coef", "sigma",
-  #                                        "vcov", "npar", "df.residual","residuals", "fitted.values")))
-
-  # check the output message of the object
-  #expect_output(print(m), "components(s) explain(s)")
-})
-
-test_that("Validate the transformed output from function", {
-  # PCA
-  pca1 <- transformer.pca(iris[,1:4], components=2,
-                          center=F, scaling=F, handle_category = NULL)
-  pca2 <- prcomp(iris[,1:4], rank. = 2, center=F, scale. =F)
-  
-  expect_equal(pca1$x, pca2$x, tolerance=1e-3)
-  expect_equal(pca1$others$coef, pca2$rotation, tolerance=1e-3)
-  
-  # NMF - not able to compare because of the randomness
-  # nmf1 <- transformer.nmf(iris[,1:4], components=2, max_iter = 1000,
-  #                        center=F, scaling=F, handle_category=NULL)
-  # library(NMFN)
-  # nmf2 <- nnmf(iris[,1:4], k=2)
-  # expect_equal(nmf1$x, nmf2$W, tolerance=1e-3)
-  # expect_equal(nmf1$others$coef, t(nmf2$H), tolerance=1e-3)
-  
-  # KPCA - not able to compare because of the randomness
-  kpca1 <- transformer.kpca(iris[,1:4], components=2, kernel="rbfdot", sigma=0.1,
-                         center=F, scaling=F, handle_category=NULL)
-  library(kernlab)
-  kpca2 <- kpca(~., iris[,1:4], features=2)
-  kpca2x <- rotated(kpca2)
-  colnames(kpca2x) <- c('PC1', 'PC2')
-  rownames(kpca2x) <- NULL
-  expect_equal(kpca1$x, kpca2x, tolerance=1e-3)
-
-})

@@ -2,24 +2,21 @@
 #'
 #' This function create a transformer object based on the dataset. There are the other settings to preprocessing this dataset before creating the object.
 #' @param components whole number greater than 0 set the target reduced dimensions for the transformed data, default is 2.
-#' @param center boolean value or a numeric vector corresponding to dataset's columns. Parameter is passed to base::scale.
-#' @param scaling boolean value or a numeric vector corresponding to dataset's columns. Parameter is passed to base::scale.
+#' @param center logical value or a numeric vector corresponding to dataset's columns. Parameter is passed to base::scale.
+#' @param scaling logical value or a numeric vector corresponding to dataset's columns. Parameter is passed to base::scale.
 #' @param handle_category character value to handle categorical features. The accepted values are 'label', 'onehot', and 'ignore'. Default value is NULL, if dataset contains character fields, the function return error. .
 #' @param max_iter positive number to limit the iteration, default is 1000.
 #'
 #' @details
-#' This calculation is created based on NMFN::nnmf function (Lee et al. 2001 based on Euclidean distance). It creates a transformer object including the transformed data and other attributes of extra information regarding to the tranforming process by the algorithm.
+#' The function is created based on NMFN::nnmf function (Lee et al. 2001 based on Euclidean distance) with some adjustments to fit into the purpose of the package. It includes preprocessing data (scaling, categorical handling) before transforming data. It creates a transformer object with attributes to perform other functionalities.
 #'
-#' @return trans_nmf return a list with class "transformer" containing the following components:
-#' \item{x}{transformed data.}
-#' \item{center}{value of center using for scaling data.}
-#' \item{scale}{value of scale using for scaling data.}
+#' @return Return "transformer" class.
 #'
 #' @export
 #' @examples
 #' data(iris)
-#' x_trans <- transformer.nmf(iris[,1:4])
-#'
+#' nmf <- transformer.nmf(iris[,1:4])
+#' print(nmf)
 
 transformer.nmf <- function (x, components=2, center = FALSE, scaling = FALSE, handle_category = NULL, max_iter = 1000) {
   # Validate input
@@ -29,12 +26,18 @@ transformer.nmf <- function (x, components=2, center = FALSE, scaling = FALSE, h
     x <- .handle_category(x, handle_category)
   
   # extra input for nmf
-  if (!is.numeric(max_iter) | length(max_iter) > 1 | ceiling(max_iter) != max_iter)
+  if (length(max_iter) > 1)
     stop("max_iter should be a positive interger number.")
+  if (!is.numeric(max_iter))
+    stop("max_iter should be a positive interger number.")
+  else {
+    if (ceiling(max_iter) != max_iter | max_iter < 1)
+      stop("max_iter should be a positive interger number.")
+  }
 
   x <- as.matrix(x)
 
-  if (any(x<0)) stop("Negative value in x")
+  # if (any(x<0)) stop("Negative value in x")
 
   x <- scale(x, center = center, scale = scaling)
   cen <- attr(x, "scaled:center")

@@ -66,9 +66,9 @@ grp2_idx <- which(kpca$x[,'PC1'] < 0)
 df['color'] <- "black"
 df[grp2_idx, 'color'] <- "red"
 par(mfrow=c(1, 3))
-plot(pca, color=df$color, main="PCA")
-plot(nmf, color=df$color, main="NMF")
-plot(kpca, color=df$color, main="KPCA")
+plot(pca, col=df$color, main="PCA")
+plot(nmf, col=df$color, main="NMF")
+plot(kpca, col=df$color, main="KPCA")
 
 ```
 
