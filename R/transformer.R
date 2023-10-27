@@ -36,6 +36,14 @@ print.transformer <- function(object, ...) {
 
 #' Summarizing transformer object
 #'
+#' summary method for class 'transformer'.
+#' @param object transformer object.
+#'
+#' @details
+#' Object's attributes are printed.
+#'
+#' @return Return a list of transformer object's attributes.
+#'
 #' @export
 summary.transformer <- function(object)
 {

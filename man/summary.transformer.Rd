@@ -6,6 +6,15 @@
 \usage{
 \method{summary}{transformer}(object)
 }
+\arguments{
+\item{object}{transformer object.}
+}
+\value{
+Return a list of transformer object's attributes.
+}
 \description{
-Summarizing transformer object
+summary method for class 'transformer'.
+}
+\details{
+Object's attributes are printed.
 }
