@@ -1,5 +1,5 @@
 ## Overview
-‘dtrans’packagesupportstransforminghigh dimensional data into lower dimensional data by PCA, NMF, Kernel PCA:
+‘dtrans’package supports transforming high dimensional data into lower dimensional data by PCA, NMF, Kernel PCA:
 - PCA (Principal Component Analysis) – is a popular algorithm, transforms data into a new coordinate system which captures the high data variance.
 - NMF (Non-Negative Matrix Factorization) - is applied for positive data. It is more suitable for the data combined from different sources, layers.
 - Kernel PCA uses kernel trick – projecting the non-linear-separated data into the linearly separated one in a higher dimensional space.
